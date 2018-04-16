@@ -604,6 +604,8 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.root.bind('<j>', self.on_key)
         self.root.bind('<q>', self.on_key)
         self.root.bind('<Control-s>', self.ask_save)
-        # self.root.bind('s', self.break_loop)
-        self.root.state('zoomed')
+        if os.name == 'nt':
+            self.root.state('zoomed')
+        else:
+            self.root.attributes('-zoomed', True)
         self.root.mainloop()

@@ -7,7 +7,6 @@ from tkinter import ttk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from tkinter.messagebox import askokcancel
 from tkinter.messagebox import askyesno
-from tkinter.messagebox import asksaveasfilename
 from tkinter.messagebox import showerror
 from tkinter.messagebox import showinfo
 from tkinter.messagebox import showwarning
@@ -63,7 +62,12 @@ class Interface(object):
 
     # ask for desired file name
     def get_path(self, label=None, res=False):
-        path = askopenfilename(title='請選擇影像路徑', filetypes=[('video file (*.avi;*.mp4)','*.avi;*.mp4')])
+        if os.name == 'nt':
+            path = askopenfilename(
+                title='請選擇影像路徑 (*.avi;*.mp4)',
+                filetypes=[('video file (*.avi;*.mp4)', '*.avi;*.mp4')])
+        else:
+            path = askopenfilename(title='請選擇影像路徑 (*.avi;*.mp4)')
 
         if path != "":
             if not res:

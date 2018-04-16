@@ -1,12 +1,13 @@
+import logging
+import time
+from functools import wraps
+
 import cv2
 import numpy as np
 from PIL import Image, ImageTk
-import time
-import logging
-from functools import wraps
 
 LENGTH_ARROW = 20
-logging.basicConfig(level=logging.INFO)
+LOGGER = logging.getLogger(__name__)
 
 class catchtime(object):
     def __init__(self, name, log_type="debug"):
@@ -19,9 +20,9 @@ class catchtime(object):
     def __exit__(self, type, value, traceback):
         self.t = time.clock() - self.t
         if self.lt == "info":
-            logging.info("{} - {:.4f}".format(self.name, self.t))
+            LOGGER.info("{} - {:.4f}".format(self.name, self.t))
         elif self.lt == "debug":
-            logging.debug("{} - {:.4f}".format(self.name, self.t))
+            LOGGER.debug("{} - {:.4f}".format(self.name, self.t))
 
 class Utils(object):
 
@@ -95,7 +96,7 @@ class Utils(object):
                         tri_pts = tri(pt)
                         # draw path end point triangle
                         cv2.polylines(self._frame, tri_pts, True, color, width)
-                        
+
                         # position of text info
                         c = color # (50, 50, 255)
                         if last_pt[1] > pt[1] and pt[1] > 50:
@@ -135,7 +136,7 @@ class Utils(object):
                     y_c = int((ymin+ymax) / 2 + 0.5)
                     p1, p2 = (int(xmin), int(ymin)), (int(xmax), int(ymax))
                     color = None
-                    
+
                     # for not showing history false positive points
                     compare = False
                     for fp in self.fp_pts:
@@ -149,7 +150,7 @@ class Utils(object):
                         for k in sorted([k for k, v in self.object_name.items() if v['on']]):
                             pts = results_dict[k]['path']
                             flag = results_dict[k]['n_frame']
-                            ind = None                    
+                            ind = None
                             try:
                                 ind = flag.index(self.n_frame)
                             except:
@@ -182,7 +183,7 @@ class Utils(object):
             else:
                 string = 'Manual Label' if self.stop_n_frame == self.n_frame else 'Prev. (Manual)' if self.stop_n_frame > self.n_frame else 'Af. (Manual)'
             cv2.putText(self._frame, string, (30, 30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 255), 1)
-            
+
             # draw manual label paths
             if len(self.tmp_line) > 1:
                 color = (255, 255, 255)
@@ -198,7 +199,7 @@ class Utils(object):
 
             if len(rat_detector.rat_cnt) > 0 and self.check_show_rat is not None and self.check_show_rat.get() == 1:
                 cv2.drawContours(self._frame, rat_detector.rat_cnt, -1, (216, 233, 62), 2)
-            
+
             # adjust the frame aspect ratio if the window is maximized
             if self.root.state() == 'zoomed':
                 try:
@@ -232,13 +233,12 @@ class Utils(object):
                         nh = nn_h
                         nw = nn_w
                     else:
-                        print(df_w)
+                        LOGGER.info(df_w)
 
                     newsize = (nw, nh)
                     self._frame = cv2.resize(self._frame, newsize)
                 except:
                     pass
-                # print(newsize)
 
             # convert frame into rgb
             self._frame = cv2.cvtColor(self._frame, cv2.COLOR_BGR2RGB)
@@ -286,10 +286,10 @@ class Common(object):
             return False
 
     # see if a points is inside a rectangle
-    def in_rect(pt, rect):  
+    def in_rect(pt, rect):
         x_condition = pt[0] > rect[0][0] and pt[0] < rect[1][0]
         y_condition = pt[1] > rect[0][1] and pt[1] < rect[1][1]
-        
+
         if x_condition and y_condition:
             return True
         else:
@@ -310,19 +310,19 @@ class Common(object):
         yA = max(boxA[1], boxB[1])
         xB = min(boxA[2], boxB[2])
         yB = min(boxA[3], boxB[3])
-     
+
         # compute the area of intersection rectangle
         interArea = (xB - xA + 1) * (yB - yA + 1)
-     
+
         # compute the area of both the prediction and ground-truth rectangles
         boxAArea = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
         boxBArea = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
-     
+
         # compute the intersection over union by taking the intersection
         # area and dividing it by the sum of prediction + ground-truth
         # areas - the interesection area
         iou = interArea / float(boxAArea + boxBArea - interArea)
-     
+
         # return the intersection over union value
         return iou
 
@@ -349,7 +349,7 @@ class RatDetector(object):
                 for y in [y1, y2]:
                     on_rat = on_rat or poly.contains_point((x, y))
         except Exception as e:
-            print('Error in detect_on_rat method', e)
+            LOGGER.info('Error in detect_on_rat method', e)
             on_rat = False
         return on_rat
 
@@ -394,26 +394,26 @@ def drawpoly(img,pts,color,thickness=1,style='dotted',):
         drawline(img,s,e,color,thickness,style)
 
 def drawrect(img,pt1,pt2,color,thickness=1,style='dotted'):
-    pts = [pt1,(pt2[0],pt1[1]),pt2,(pt1[0],pt2[1])] 
+    pts = [pt1,(pt2[0],pt1[1]),pt2,(pt1[0],pt2[1])]
     drawpoly(img,pts,color,thickness,style)
 
 def draw_arrow(image, p, q, color, dist, arrow_magnitude=9, thickness=1, line_type=8, shift=0):
 # adapted from http://mlikihazar.blogspot.com.au/2013/02/draw-arrow-opencv.html
-    
+
     if dist > 48:
     # draw arrow tail
         drawline(image, p, q, color, thickness, gap=7)
     else:
         cv2.line(image, p, q, color, thickness, line_type, shift)
 
-    # calc angle of the arrow 
+    # calc angle of the arrow
     angle = np.arctan2(p[1]-q[1], p[0]-q[0])
-    # starting point of first line of arrow head 
+    # starting point of first line of arrow head
     p = (int(q[0] + arrow_magnitude * np.cos(angle + np.pi/4)),
     int(q[1] + arrow_magnitude * np.sin(angle + np.pi/4)))
     # draw first half of arrow head
     cv2.line(image, p, q, color, thickness, line_type, shift)
-    # starting point of second line of arrow head 
+    # starting point of second line of arrow head
     p = (int(q[0] + arrow_magnitude * np.cos(angle - np.pi/4)),
     int(q[1] + arrow_magnitude * np.sin(angle - np.pi/4)))
     # draw second half of arrow head

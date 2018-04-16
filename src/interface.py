@@ -1,11 +1,23 @@
+import json
+import logging
+import os
+import pickle
 import tkinter as tk
 from tkinter import ttk
-from tkinter.messagebox import askyesno, askokcancel, showerror, showwarning, showinfo
 from tkinter.filedialog import askopenfilename, asksaveasfilename
-import pickle, os, json
-from src.listbox import Tk_Table
+from tkinter.messagebox import askokcancel
+from tkinter.messagebox import askyesno
+from tkinter.messagebox import asksaveasfilename
+from tkinter.messagebox import showerror
+from tkinter.messagebox import showinfo
+from tkinter.messagebox import showwarning
+
 import numpy as np
 import pandas as pd
+
+from src.listbox import Tk_Table
+
+LOGGER = logging.getLogger(__name__)
 
 class Interface(object):
 
@@ -107,10 +119,10 @@ class Interface(object):
         root = '/'.join(self.video_path.split('/')[:-1])
         filename = self.video_path.split('/')[-1]
         filename = "%s" % filename.split('.avi')[0]
-        filename = asksaveasfilename(initialdir='%s' % (root), 
-                                     defaultextension=".csv", 
-                                     filetypes=(("CSV", "*.csv"),("All Files", "*.*")), 
-                                     initialfile=filename, 
+        filename = asksaveasfilename(initialdir='%s' % (root),
+                                     defaultextension=".csv",
+                                     filetypes=(("CSV", "*.csv"),("All Files", "*.*")),
+                                     initialfile=filename,
                                      title='匯出路徑')
 
         if filename not in ["", None]:
@@ -172,7 +184,7 @@ class Interface(object):
             self.l=tk.Label(top,text=string, font=("Verdana", 12))
             self.l.pack(expand=tk.YES, fill=tk.BOTH, padx=5, pady=5)
             if validnum:
-                vcmd = (master.register(self.validate), 
+                vcmd = (master.register(self.validate),
                     '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
                 self.e =ttk.Entry(top, validate='key', validatecommand=vcmd)
             else:
@@ -198,7 +210,7 @@ class Interface(object):
         def cleanup(self):
             self.value=self.e.get()
             self.top.destroy()
-        
+
         def validate(self, action, index, value_if_allowed,
                            prior_value, text, validation_type, trigger_type, widget_name):
             if text in '0123456789':

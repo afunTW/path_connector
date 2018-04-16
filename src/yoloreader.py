@@ -9,7 +9,7 @@ from skimage.measure import compare_ssim
 from src.utils import catchtime
 import logging
 
-logging.basicConfig(level=logging.INFO)
+LOGGER = logging.getLogger(__name__)
 
 # letter = [chr(i) for i in range(ord('A'), ord('Z')+1)]
 letter = [str(i) for i in range(1, 20)]
@@ -48,7 +48,7 @@ class YOLOReader(object):
         n_show: records every n_show for displaying tracked results
         """
         n_key_used = len(self.object_name.keys())
-        
+
         self.is_calculate = True
         n_frame = ind if ind is not None else self.n_frame
         undone_pts = []
@@ -152,7 +152,7 @@ class YOLOReader(object):
                 # sorted dist index by dist
                 sorted_indexes = {k: sorted(range(len(v['dist'])), key=lambda k: v['dist'][k]) for k, v in tmp_dist_record.items()}
                 hit_condi = [(k, sorted_indexes[k][0]) for k in on_keys if tmp_dist_record[k]['below_tol'][sorted_indexes[k][0]]]
-                
+
                 # if n_frame > 480 and n_frame < 485:
                 #     print(n_frame)
                 #     print(tmp_dist_record)
@@ -168,13 +168,13 @@ class YOLOReader(object):
                             self.results_dict[k]['path'].append(tmp_dist_record[k]['center'][ind])
                             self.results_dict[k]['n_frame'].append(n_frame)
                             self.results_dict[k]['wh'].append(tmp_dist_record[k]['wh'][ind])
-                    
-                    logging.info('len(set([v[1] for v in hit_condi])) == len(on_keys) (%s)' % n_frame)
-                    
+
+                    LOGGER.info('len(set([v[1] for v in hit_condi])) == len(on_keys) (%s)' % n_frame)
+
                     assigned_keys = [k for k, ind in hit_condi]
                     assigned_boxes = [ind for k, ind in hit_condi]
                     not_assigned_boxes = set([i for i in range(len(boxes))]).difference(assigned_boxes)
-                    
+
                     not_assigned_indices = []
                     for ind in not_assigned_boxes:
                         if not any([v['dist'][ind] <= THRES_NEAR_DIST for k, v in tmp_dist_record.items() if k in assigned_keys]):
@@ -219,9 +219,9 @@ class YOLOReader(object):
 
                 # the length of hit_condi is same as the number of nearest indexes
                 elif len(set([v for k, v in hit_condi])) == len(hit_condi):
-                    logging.info('len(set([v for k, v in hit_condi])) == len(hit_condi) (%s)' % n_frame)
+                    LOGGER.info('len(set([v for k, v in hit_condi])) == len(hit_condi) (%s)' % n_frame)
                     if n_frame > 12110 and n_frame < 12116:
-                        logging.info("%s - %s (%s)" % (hit_condi, tmp_dist_record, n_frame))
+                        LOGGER.info("%s - %s (%s)" % (hit_condi, tmp_dist_record, n_frame))
                     for k, ind in hit_condi:
                         if k not in label_ind:
                             self.results_dict[k]['path'].append(tmp_dist_record[k]['center'][ind])
@@ -233,7 +233,7 @@ class YOLOReader(object):
                         assigned_boxes = [ind for k, ind in hit_condi]
                         assigned_keys = [k for k, ind in hit_condi]
                         not_assigned_boxes = set([i for i in range(len(boxes))]).difference(assigned_boxes)
-                        not_assigned_keys = [k for k in on_keys if k not in assigned_keys]                        
+                        not_assigned_keys = [k for k in on_keys if k not in assigned_keys]
 
                         not_assigned_indices = []
                         for ind in not_assigned_boxes:
@@ -297,9 +297,9 @@ class YOLOReader(object):
 
                                     if len(not_assigned_keys) == 0:
                                         break
-                                    logging.info("%s hit 'min key is not None' (%s)" % (ind, n_frame))
+                                    LOGGER.info("%s hit 'min key is not None' (%s)" % (ind, n_frame))
                                     if n_frame == 12112:
-                                        logging.info("%s - %s" % (hit_condi, tmp_dist_record))
+                                        LOGGER.info("%s - %s" % (hit_condi, tmp_dist_record))
                                 else:
                                     # forward next 100 points
                                     temp = 0
@@ -337,7 +337,7 @@ class YOLOReader(object):
                                             not_assigned_indices.append(ind)
                                     # if this center of bounding box is not potentially connected in next 100 frames, just ignored it.
                                     else:
-                                        logging.info('Line 240: temp < THRES_NOT_ASSIGN_FORWARD_N')
+                                        LOGGER.info('Line 240: temp < THRES_NOT_ASSIGN_FORWARD_N')
 
                         if not self.is_calculate:
                             print('Case: not assigned boxes')
@@ -353,7 +353,7 @@ class YOLOReader(object):
                     duplicate_ind = set([x for x in hit_boxes if hit_boxes.count(x) > 1]) # boxes indexes with multi objects
                     duplicate_key = [k for k, v in hit_condi if hit_boxes.count(v) > 1] # key has multi boxes that hit condition
 
-                    logging.info('duplicate key: %s duplicate ind: %s' % (duplicate_key, duplicate_ind))
+                    LOGGER.info('duplicate key: %s duplicate ind: %s' % (duplicate_key, duplicate_ind))
                     # if this is duplicate indexes case, assign the nearest one
                     if len(duplicate_ind) > 0 :
                         min_key = []
@@ -366,7 +366,7 @@ class YOLOReader(object):
                                 undone_pts.append((tmp_dist_record[on_keys[0]]['center'][ind], n_frame))
                                 self.is_calculate = False
                                 # if n_frame - self.results_dict[duplicate_key[sorted_keys_by_dist[1]]]['n_frame'][-1] < 5:
-                                #     logging.info("Current: %s, choose second nearest %s" % (min_dist_key, duplicate_key[sorted_keys_by_dist[1]]))
+                                #     LOGGER.info("Current: %s, choose second nearest %s" % (min_dist_key, duplicate_key[sorted_keys_by_dist[1]]))
                                 #     min_dist_key = duplicate_key[sorted_keys_by_dist[1]]
                                 # else:
                             min_key.append(min_dist_key)
@@ -379,7 +379,7 @@ class YOLOReader(object):
                                     self.results_dict[k]['wh'].append(tmp_dist_record[k]['wh'][ind])
 
                             # pending, not assigned key
-                            logging.info('duplicate happened (%s)' % n_frame)
+                            LOGGER.info('duplicate happened (%s)' % n_frame)
 
                             # for not assigned key
                             for k in set(duplicate_key).difference(min_key):
@@ -407,40 +407,6 @@ class YOLOReader(object):
             # just ignored if there is no bounding box in this frame
             else:
                 on_keys = sorted([k for k, v in self.object_name.items() if v['on']])
-
-            # check if there is a separation of bboxes after overlapping
-            # for k1, ind1 in hit_condi:
-            #     p1 = tmp_dist_record[k1]['center'][ind1]
-            #     other_keys = [k for k in self.results_dict.keys() if k is not k1]
-            #     nb_near = 0
-            #     for k2 in other_keys:
-            #         pts = self.results_dict[k2]['path'][-SEPARATE_N_FRAME:]
-            #         for p2 in pts:
-            #             near_dist = np.linalg.norm(np.array(p1) - np.array(p2))
-            #             if near_dist < (THRES_SEP_DIST-30):
-            #                 nb_near += 1
-            #         if nb_near > SEPARATE_N_FRAME/2:
-            #             tmp_dist = np.linalg.norm(np.array(p1) - np.array(self.results_dict[k2]['path'][-1]))
-            #             if tmp_dist > (THRES_SEP_DIST-5) and tmp_dist < (THRES_SEP_DIST+15):
-            #                 undone_pts.append((tmp_dist_record[on_keys[0]]['center'][ind1], n_frame))
-            #                 if k2 in [t for t, z in hit_condi]:
-            #                     undone_pts.append((tmp_dist_record[on_keys[0]]['center'][[z for t, z in hit_condi if t == k2][0]], n_frame))
-            #                 if self.results_dict[k1]['n_frame'][-1] == n_frame:
-            #                     print("delete %s" % k1)
-            #                     del self.results_dict[k1]['n_frame'][-1]
-            #                     del self.results_dict[k1]['path'][-1]
-            #                     del self.results_dict[k1]['wh'][-1]
-            #                 if self.results_dict[k2]['n_frame'][-1] == n_frame:
-            #                     print("delete %s" % k2)
-            #                     del self.results_dict[k2]['n_frame'][-1]
-            #                     del self.results_dict[k2]['path'][-1]
-            #                     del self.results_dict[k2]['wh'][-1]
-
-            #                 self.is_calculate = False
-            #                 print('%s & %s distance %s' % (k1, k2, tmp_dist))
-                            
-            #                 logging.info('separation happened (%s), k1: %s k2: %s' % (n_frame, k1, k2))
-                            # break
 
             if self.is_calculate:
                 n_frame += 1
@@ -522,7 +488,7 @@ class YOLOReader(object):
                 self.stop_n_frame = n_frame
                 self.current_pts, self.current_pts_n = undone_pts.pop(0)
                 self.undone_pts = undone_pts
-                
+
                 # record value for undoing
                 with catchtime("saving record took time", "info") as f:
                     self.save_records()

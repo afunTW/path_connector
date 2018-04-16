@@ -1,14 +1,21 @@
+import copy
+import logging
+import os
+import pickle
+import threading
+import time
 import tkinter as tk
 from tkinter import ttk
+
 import cv2
-import time, os, pickle, copy
 import numpy as np
 from PIL import Image, ImageTk
-import threading
 
-from src.yoloreader import YOLOReader
 from src.keyhandler import KeyHandler
 from src.utils import Utils, catchtime
+from src.yoloreader import YOLOReader
+
+LOGGER = logging.getLogger(__name__)
 
 # basic setup variables
 WIN_NAME = 'Path Connector'
@@ -24,7 +31,7 @@ LARGE_FONT= ("Verdana", 12)
 MULTI = False
 
 class PathConnector(YOLOReader, KeyHandler, Utils):
-    
+
     def __init__(self, maximum, tol):
         """
         ----------------------------------------------------------------------
@@ -32,7 +39,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         ----------------------------------------------------------------------
         maximum: temp varible; maximum number of frames to display connected.
         tol: temp variable; maximum tolerance distance between context path coordinate.
-        
+
         """
         # basic setup
         self.win_name = WIN_NAME
@@ -93,7 +100,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.is_manual = False
         self.rat_cnt_dict = dict()
         self.hit_condi = None
-        
+
         # variables for breaking from calculating loop
         self.n_run = None
         self.cancel_id = None
@@ -164,7 +171,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
             m, s = divmod(sec, 60)
             h, m = divmod(m, 60)
             text_time = "%d:%02d:%02d" % (h, m, s)
-            
+
             self.label_video_name.configure(text='影像檔名: %s' % text_video_name)
             self.label_nframe_v.configure(text="當前幀數: %s/%s" % (self.n_frame, self.total_frame))
             self.label_time.configure(text='影像時間: %s' % text_time)
@@ -194,7 +201,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
 
     def update_track(self, ind):
         if len(self.tracked_frames) > 0 and ind < (len(self.tracked_frames) - 1) and self.safe: #  and self.safe:
-            frame = self.tracked_frames[ind] 
+            frame = self.tracked_frames[ind]
             if ind < (len(self.tracked_frames) - 1):
                 ind += 1
                 self.scale_nframe.set(20*(ind) + 1)
@@ -255,9 +262,9 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
             self.run()
 
     def save_records(self):
-        
+
         records = (copy.deepcopy(self.results_dict), copy.deepcopy(self.tmp_results_dict), {**self.dist_records}, copy.deepcopy(self.hit_condi), self.stop_n_frame, self.undone_pts, self.current_pts, self.current_pts_n, copy.deepcopy(self.suggest_ind), copy.deepcopy(self.object_name))
-    
+
         if len(self.undo_records) > 0:
             if self.stop_n_frame != self.undo_records[-1][1]:
                 self.undo_records.append(records)
@@ -276,20 +283,19 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         size = (self.root.winfo_width(), self.root.winfo_height())
         x = w/2 - size[0]/2
         y = h/2.25 - size[1]/2
-        # print("%dx%d+%d+%d" % (size + (x, y)))
         r = 0 if self.root.state() == 'zoomed' else r
         self.root.geometry("%dx%d+%d+%d" % (size[0], size[1]+r, x, y))
 
     # main logic for runing UI
     def run(self):
-        
+
         self.n_frame = 1
         self.last_n_frame = self.n_frame
         self.video.set(cv2.CAP_PROP_POS_FRAMES, self.n_frame - 1)
         ok, self._frame = self.video.read()
         self._orig_frame = self._frame.copy()
         self.draw_legend()
-        
+
         if not ok:
             self.msg("Can't open the video")
 
@@ -299,9 +305,9 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.root.title(self.win_name)
         self.root.protocol('WM_DELETE_WINDOW', self.on_close)
         self.root.bind('<Left>', self.on_left)
-        self.root.bind('<Right>', self.on_right)        
-        self.root.bind('<Up>', self.on_up)        
-        self.root.bind('<Down>', self.on_down)        
+        self.root.bind('<Right>', self.on_right)
+        self.root.bind('<Up>', self.on_up)
+        self.root.bind('<Down>', self.on_down)
         self.root.bind('<Prior>', self.on_page_up)
         self.root.bind('<Next>', self.on_page_down)
         self.root.focus_force()
@@ -363,7 +369,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
 
         # convert to format that ImageTk require
         self.image = ImageTk.PhotoImage(Image.fromarray(self._frame))
-        
+
         # frame for displaying image label
         IMAGE_FRAME = ttk.Frame(self.root)
         IMAGE_FRAME.grid(row=0, column=0)
@@ -379,7 +385,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.display_label.bind('<Button-1>', self.on_mouse)
         self.display_label.bind('<Button-3>', self.on_mouse)
         self.display_label.bind('<Motion>', self.on_mouse_mv)
-        
+
         IMAGE_LABEL_FRAME = ttk.LabelFrame(IMAGE_FRAME)
         IMAGE_LABEL_FRAME.grid(sticky='news', padx=5, pady=5)
         tk.Grid.rowconfigure(IMAGE_LABEL_FRAME, 0, weight=1)
@@ -407,7 +413,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         STATE_FRAME.grid_rowconfigure(1, weight=1)
         STATE_FRAME.grid_rowconfigure(2, weight=1)
         STATE_FRAME.grid_columnconfigure(0, weight=1)
-        
+
         # subframe for displaying frame information
         INFO_FRAME = ttk.LabelFrame(STATE_FRAME, text='影像訊息')
         INFO_FRAME.grid(sticky="news", padx=5, pady=5)
@@ -426,7 +432,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         OBJ_FRAME.grid_rowconfigure(0, weight=1)
         OBJ_FRAME.grid_columnconfigure(0, weight=1)
         OBJ_FRAME.grid_columnconfigure(1, weight=1)
-        
+
         self.tv = ttk.Treeview(OBJ_FRAME, height = 3)
         self.tv['columns'] = ('color', 'lastpoint', 'lastdetectedframe')
         self.tv.heading('#0', text='名稱', anchor='center')
@@ -450,7 +456,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
             except:
                 is_detected = False
             self.tv.insert('', 'end', n, text=n, values=(self.color_name[self.object_name[n]['ind']][0], is_detected, rd['n_frame'][-1]))
-        self.tv.bind('<Double-Button-1>', self.tvitem_click) 
+        self.tv.bind('<Double-Button-1>', self.tvitem_click)
 
         # frame for legend
         LEGENG_FRAME = ttk.LabelFrame(STATE_FRAME, text='圖例說明')
@@ -475,13 +481,13 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         legend_4.grid(row=0, column=3, padx=3, pady=3)
 
         label_legend_2 = ttk.Label(LEGENG_FRAME, text='需被標註的\nbbox', width=10, anchor='center')
-        label_legend_2.grid(row=1, column=0, padx=3, pady=3)        
+        label_legend_2.grid(row=1, column=0, padx=3, pady=3)
         label_legend_1 = ttk.Label(LEGENG_FRAME, text='目標路徑起點', width=10, anchor='center')
-        label_legend_1.grid(row=1, column=1, padx=3, pady=3)        
+        label_legend_1.grid(row=1, column=1, padx=3, pady=3)
         label_legend_3 = ttk.Label(LEGENG_FRAME, text='目標在本幀的位置', width=13, anchor='center')
-        label_legend_3.grid(row=1, column=2, padx=3, pady=3)        
+        label_legend_3.grid(row=1, column=2, padx=3, pady=3)
         label_legend_4 = ttk.Label(LEGENG_FRAME, text='目標路徑終點', width=10, anchor='center')
-        label_legend_4.grid(row=1, column=3, padx=3, pady=3)        
+        label_legend_4.grid(row=1, column=3, padx=3, pady=3)
 
         # frame for display buttons
         self.BUTTON_FRAME = ttk.LabelFrame(self.OP_FRAME, text="需被標註的 bbox 應該是哪一個目標呢？")
@@ -489,7 +495,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.BUTTON_FRAME.grid_columnconfigure(0, weight=1)
         for x in range(8):
             self.BUTTON_FRAME.grid_rowconfigure(x, weight=1)
-        
+
         for i, k in enumerate(['誤判 (d)', '新目標 (a)'] + sorted(self.object_name.keys())):
             if i in [0, 1]:
                 bg = None
@@ -519,7 +525,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         # operation buttons
         button_go = ttk.Button(self.BUTTON_FRAME_2, text='回到需被標註的幀數 (Enter)', command=self.on_return, cursor='hand2')
         button_go.grid(row=0, columnspan=2, sticky="news", padx=10, pady=2)
-        
+
         button_manual = ttk.Button(self.BUTTON_FRAME_2, text='進入 / 離開 Manual Label (q)', command=self.on_manual_label, cursor='hand2')
         button_manual.grid(row=1, columnspan=2, sticky="news", padx=10, pady=2)
 
@@ -547,7 +553,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
 
         check_is_clear = ttk.Checkbutton(self.BUTTON_FRAME_2, variable=self.check_is_clear, onvalue=1, offvalue=0, text='透鏡')
         check_is_clear.grid(row=7, column=0, sticky="news", padx=10, pady=5)
-        
+
         check_show_rat = ttk.Checkbutton(self.BUTTON_FRAME_2, variable=self.check_show_rat, onvalue=1, offvalue=0, text='顯示老鼠輪廓')
         check_show_rat.grid(row=6, column=1, sticky="news", padx=10, pady=5)
 
@@ -555,7 +561,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         check_show_drawing.grid(row=7, column=1, sticky="news", padx=10, pady=5)
 
         # suggest default option
-        print(self.suggest_ind)
+        LOGGER.info(self.suggest_ind)
         if self.suggest_ind[0][0] == 'fp':
             ind = 0
         elif self.suggest_ind[0][0] == 'new':
@@ -564,7 +570,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
             ind = self.object_name[self.suggest_ind[0][0]]['ind'] + 2
         self.all_buttons[ind].focus_force()
         self.suggest_label.grid(row=ind, column=1, sticky="news", padx=5, pady=5)
-        
+
         self.update_track(0)
         self.update_label()
         self.update_draw()

@@ -414,7 +414,7 @@ class YOLOReader(object):
                 print('paths connecting stops at %s' % n_frame)
 
             # record animation
-            if n_frame % n_show == 0 and self.display_label is not None:
+            if n_frame % n_show == 0 and self.label_display is not None:
 
                 cv2.putText(self._frame, 'Calculating...', (30, 30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 255), 1)
                 for k in on_keys:
@@ -465,9 +465,9 @@ class YOLOReader(object):
 
                 self._frame = cv2.cvtColor(self._frame, cv2.COLOR_BGR2RGB)
                 self.image = ImageTk.PhotoImage(Image.fromarray(self._frame))
-                if self.display_label is not None:
-                    self.display_label.configure(image=self.image)
-                    self.scale_nframe.set(n_frame)
+                if self.label_display is not None:
+                    self.label_display.configure(image=self.image)
+                    self.scale_nframe_v.set(n_frame)
                     self.root.update_idletasks()
                 else:
                     self.tracked_frames.append(ImageTk.PhotoImage(Image.fromarray(self._frame)))
@@ -475,7 +475,7 @@ class YOLOReader(object):
                 break
 
         if self.is_calculate:
-            self.cancel_id = self.display_label.after(0, self.calculate_path, n_frame)
+            self.cancel_id = self.label_display.after(0, self.calculate_path, n_frame)
         else:
             # if the labeling process is not finish
             if not self.is_finish:
@@ -590,4 +590,4 @@ class YOLOReader(object):
             else:
                 ind = self.object_name[self.suggest_ind[0][0]]['ind'] + 2
             self.all_buttons[ind].focus_force()
-            self.suggest_label.grid(row=ind, column=1, sticky="nwes", padx=5, pady=5)
+            self.label_suggest.grid(row=ind, column=1, sticky="nwes", padx=5, pady=5)

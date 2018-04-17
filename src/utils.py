@@ -43,7 +43,7 @@ class Utils(object):
 
                     # if the path is not conneted in the current frame yet, show only the first coordinate
                     if ind is not None:
-                        if self.check_show_drawing is None or self.check_show_drawing.get() == 1 and not self.is_calculate:
+                        if self.var_show_tracked is None or self.var_show_tracked.get() == 1 and not self.is_calculate:
                             # show until current if ind is not None
                             lb = (ind+1-self.maximum)
                             ub = (ind + 1) if ind is not None else None
@@ -127,7 +127,7 @@ class Utils(object):
                 cv2.putText(self._frame, '?', (x - 9, y + 9), cv2.FONT_HERSHEY_TRIPLEX, 0.8, color, thickness)
 
             # draw YOLO bounding boxes
-            if self.check_show_yolo is None or self.check_show_yolo.get() == 1:
+            if self.var_show_bbox is None or self.var_show_bbox.get() == 1:
                 _, boxes = eval(self.__yolo_results__[self.n_frame - 1])
 
                 for b in boxes:
@@ -168,7 +168,7 @@ class Utils(object):
             # remove drawing on specific region
             n = 60
             e = 100
-            if self.clear and self.check_is_clear.get() == 1:
+            if self.clear and self.var_clear.get() == 1:
                 x, y = self.mv_x, self.mv_y
                 xmin, xmax = max(0, (x-n)), min((x+n), self.width)
                 ymin, ymax = max(0, (y-n)), min((y+n), self.height)
@@ -197,7 +197,7 @@ class Utils(object):
             if self.n_frame not in self.rat_cnt_dict.keys():
                 self.rat_cnt_dict[self.n_frame] = rat_detector.rat_cnt.tolist()
 
-            if len(rat_detector.rat_cnt) > 0 and self.check_show_rat is not None and self.check_show_rat.get() == 1:
+            if len(rat_detector.rat_cnt) > 0 and self.var_show_rat is not None and self.var_show_rat.get() == 1:
                 cv2.drawContours(self._frame, rat_detector.rat_cnt, -1, (216, 233, 62), 2)
 
             # adjust the frame aspect ratio if the window is maximized
@@ -242,36 +242,6 @@ class Utils(object):
 
             # convert frame into rgb
             self._frame = cv2.cvtColor(self._frame, cv2.COLOR_BGR2RGB)
-
-    def draw_legend(self):
-        shape = (40, 40)
-        bg = cv2.merge([np.ones(shape, dtype='uint8') * i for i in [237, 240, 240]])
-        c = (20, 20)
-        fg = (0, 0, 0)
-        color = (50, 50, 255)
-
-        # origin
-        self.legend_1 = bg.copy()
-        cv2.circle(self.legend_1, c, 10, fg, 1)
-        cv2.circle(self.legend_1, c, 13, fg, 1)
-        self.legend_1 = cv2.cvtColor(self.legend_1, cv2.COLOR_BGR2RGB)
-
-
-        # to be decided
-        self.legend_2 = bg.copy()
-        cv2.circle(self.legend_2, c, 15, color, 1)
-        cv2.putText(self.legend_2, '?', (20 - 8, 20 + 9), cv2.FONT_HERSHEY_TRIPLEX, 0.8, color, 1)
-        self.legend_2 = cv2.cvtColor(self.legend_2, cv2.COLOR_BGR2RGB)
-
-        # current location
-        self.legend_3 = bg.copy()
-        tri_pts = tri(c)
-        cv2.polylines(self.legend_3, tri_pts, True, fg, 3)
-
-        # last detected location
-        self.legend_4 = bg.copy()
-        tri_pts = tri(c)
-        cv2.polylines(self.legend_4, tri_pts, True, fg, 1)
 
 class Common(object):
 
@@ -398,10 +368,10 @@ def drawrect(img,pt1,pt2,color,thickness=1,style='dotted'):
     drawpoly(img,pts,color,thickness,style)
 
 def draw_arrow(image, p, q, color, dist, arrow_magnitude=9, thickness=1, line_type=8, shift=0):
-# adapted from http://mlikihazar.blogspot.com.au/2013/02/draw-arrow-opencv.html
+    # adapted from http://mlikihazar.blogspot.com.au/2013/02/draw-arrow-opencv.html
 
     if dist > 48:
-    # draw arrow tail
+        # draw arrow tail
         drawline(image, p, q, color, thickness, gap=7)
     else:
         cv2.line(image, p, q, color, thickness, line_type, shift)

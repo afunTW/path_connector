@@ -14,11 +14,27 @@ from PIL import Image, ImageTk
 
 from src.interface import Interface
 from src.utils import Common
+from src.viewer import PathConnectorViewer
 
 LOGGER = logging.getLogger(__name__)
 letter = [str(i) for i in range(1, 20)]
 
-class KeyHandler(Interface, Common):
+
+class KeyHandler(Interface, Common, PathConnectorViewer):
+
+    def _render_op_buttons(self):
+        for i, k in enumerate([u'誤判 (d)', u'新目標 (a)'] + sorted(self.object_name.keys())):
+            if i in [0, 1]:
+                bg = None
+                b = ttk.Button(self.labelframe_target, text=k, command=lambda clr=k: self.on_button(clr), bg=bg, width=40)
+                b.grid(row=i, column=0, sticky='news', padx=5, pady=5)
+
+            else:
+                bg = self.color_name[self.object_name[k]['ind']][1].lower()
+                b = tk.Button(self.labelframe_target, text=self.object_name[k]['display_name'], command=lambda clr=k: self.on_button(clr), bg=bg)
+                b.grid(row=i, column=0, sticky='news', padx=5, pady=5)
+            b.config(cursor='hand2')
+            self.all_buttons.append(b)
 
     # reload the interface after reloading a new video; pending, add judgement for new video (like if a YOLO txt file existed)
     def on_load(self):
@@ -66,25 +82,14 @@ class KeyHandler(Interface, Common):
             for b in self.all_buttons:
                 b.grid_forget()
             self.all_buttons = []
+            self._render_op_buttons()
 
             on_ind = [v['ind'] for k, v in self.object_name.items() if v['on']]
-            for i, k in enumerate(['誤判 (d)', '新目標 (a)'] + sorted(self.object_name.keys())):
-                if i in [0, 1]:
-                    bg = None
-                    b = ttk.Button(self.BUTTON_FRAME, text=k, command=lambda clr=k: self.on_button(clr), bg=bg, width=40)
-                    b.grid(row=i, column=0, sticky=tk.W+tk.E+tk.N+tk.S, padx=5, pady=5)
-
-                else:
-                    bg = self.color_name[self.object_name[k]['ind']][1].lower()
-                    b = tk.Button(self.BUTTON_FRAME, text=self.object_name[k]['display_name'], command=lambda clr=k: self.on_button(clr), bg=bg)
-                    b.grid(row=i, column=0, sticky=tk.W+tk.E+tk.N+tk.S, padx=5, pady=5)
-
-                self.all_buttons.append(b)
 
             # reset table information
-            x = self.tv.get_children()
+            x = self.treeview_object.get_children()
             for item in x:
-                self.tv.delete(item)
+                self.treeview_object.delete(item)
 
     # popup a description widget
     def on_settings(self, event=None):
@@ -119,20 +124,20 @@ class KeyHandler(Interface, Common):
         for i, k in enumerate(['誤判 (d)', '新目標 (a)'] + sorted(self.object_name.keys())):
             if i in [0, 1]:
                 bg = None
-                b = ttk.Button(self.BUTTON_FRAME, text=k, command=lambda clr=k: self.on_button(clr), bg=bg, width=40)
+                b = ttk.Button(self.labelframe_target, text=k, command=lambda clr=k: self.on_button(clr), bg=bg, width=40)
                 b.grid(row=i, column=0, sticky=tk.W+tk.E+tk.N+tk.S, padx=5, pady=5)
 
             else:
                 bg = self.color_name[self.object_name[k]['ind']][1].lower()
-                b = tk.Button(self.BUTTON_FRAME, text=self.object_name[k]['display_name'], command=lambda clr=k: self.on_button(clr), bg=bg)
+                b = tk.Button(self.labelframe_target, text=self.object_name[k]['display_name'], command=lambda clr=k: self.on_button(clr), bg=bg)
                 b.grid(row=i, column=0, sticky=tk.W+tk.E+tk.N+tk.S, padx=5, pady=5)
 
             self.all_buttons.append(b)
 
         # reset table information
-        x = self.tv.get_children()
+        x = self.treeview_object.get_children()
         for item in x:
-            self.tv.delete(item)
+            self.treeview_object.delete(item)
 
     # run bbox assignment algorithm
     def run_calc(self, ind):
@@ -143,7 +148,7 @@ class KeyHandler(Interface, Common):
     # break from bbox assigment algorithm
     def cancel_calc(self):
         if self.cancel_id is not None:
-            self.display_label.after_cancel(self.cancel_id)
+            self.label_display.after_cancel(self.cancel_id)
             self.is_calculate = False
             self.undo(is_esc=True)
             self.cancel_id = None
@@ -176,11 +181,11 @@ class KeyHandler(Interface, Common):
                         break
 
                 if self.drag_flag is not None:
-                    self.display_label.config(cursor='hand2')
+                    self.label_display.config(cursor='hand2')
                 else:
-                    self.display_label.config(cursor='arrow')
+                    self.label_display.config(cursor='arrow')
             else:
-                self.display_label.config(cursor='hand2')
+                self.label_display.config(cursor='hand2')
 
     # switch between normal mode and manual label mode
     def chg_mode(self):
@@ -200,10 +205,10 @@ class KeyHandler(Interface, Common):
             self.tmp_results_dict = copy.deepcopy(self.results_dict)
             self.save_records()
             # switch off drawing removal
-            self.check_is_clear.set(0)
+            self.var_clear.set(0)
         else:
             # switch on drawing removal
-            self.check_is_clear.set(1)
+            self.var_clear.set(1)
 
     def on_manual_label(self):
         if self.is_manual:
@@ -248,7 +253,7 @@ class KeyHandler(Interface, Common):
 
             # add buttons
             bg = self.color_name[self.object_name[new_key]['ind']][1].lower()
-            b = tk.Button(self.BUTTON_FRAME, text=new_key, command=lambda clr=new_key: self.on_button(clr), bg=bg)
+            b = tk.Button(self.labelframe_target, text=new_key, command=lambda clr=new_key: self.on_button(clr), bg=bg)
             self.all_buttons.append(b)
             for i, b in enumerate(self.all_buttons):
                 b.grid(row=i, column=0, sticky=tk.W+tk.E+tk.N+tk.S, padx=5, pady=5)
@@ -256,7 +261,7 @@ class KeyHandler(Interface, Common):
             b.config(state='disabled')
             self.center_root(r=35)
 
-            self.display_label.config(cursor='arrow')
+            self.label_display.config(cursor='arrow')
             self.drag_flag = None
 
     # drag method for manual label mode
@@ -385,7 +390,7 @@ class KeyHandler(Interface, Common):
                     bg = self.color_name[self.object_name[new_key]['ind']][1].lower()
                     # LOGGER.info("object name %s\n" % self.object_name)
                     # LOGGER.info('Add button', self.all_buttons, len(self.all_buttons))
-                    b = tk.Button(self.BUTTON_FRAME, text=new_key, command=lambda clr=new_key: self.on_button(clr), bg=bg)
+                    b = tk.Button(self.labelframe_target, text=new_key, command=lambda clr=new_key: self.on_button(clr), bg=bg)
                     self.all_buttons.append(b)
                     # LOGGER.info('length %s' % (len(self.all_buttons) - 1))
                     for i, b in enumerate(self.all_buttons):
@@ -393,7 +398,7 @@ class KeyHandler(Interface, Common):
                     self.center_root(r=35)
                     # add table info
                     rd = self.results_dict[new_key]
-                    self.tv.insert('', 'end', new_key, text=new_key, values=(self.color_name[self.object_name[new_key]['ind']][0], rd['path'][-1], rd['n_frame'][-1]))
+                    self.treeview_object.insert('', 'end', new_key, text=new_key, values=(self.color_name[self.object_name[new_key]['ind']][0], rd['path'][-1], rd['n_frame'][-1]))
                     LOGGER.info('added!')
                 else:
                     self.drag_flag = 'new'
@@ -508,7 +513,7 @@ class KeyHandler(Interface, Common):
 
     def set_max(self, s):
         v = int(float(s))
-        self.maximum_var.set(v)
+        self.var_max_path.set(v)
         self.maximum = v
 
     def set_tol(self, s):
@@ -571,12 +576,12 @@ class KeyHandler(Interface, Common):
                 top.destroy()
 
                 # delete all info
-                self.tv.delete(k)
+                self.treeview_object.delete(k)
                 self.object_name[k]['on'] = False
 
                 del self.results_dict[k]
                 del self.object_name[k]
-                self.suggest_label.grid(row=0, column=1, sticky="nwes", padx=5, pady=5)
+                self.label_suggest.grid(row=0, column=1, sticky="nwes", padx=5, pady=5)
                 if k in self.dist_records.keys():
                     del self.dist_records[k]
                 self.all_buttons.pop(i+2)
@@ -639,8 +644,8 @@ class KeyHandler(Interface, Common):
 
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 image = ImageTk.PhotoImage(Image.fromarray(frame))
-                self.display_label.configure(image=image)
-                self.scale_nframe.set(i)
+                self.label_display.configure(image=image)
+                self.scale_nframe_v.set(i)
                 self.label_nframe_v.configure(text="當前幀數: %s/%s" % (self.n_frame, self.total_frame))
                 self.root.update_idletasks()
 
@@ -710,7 +715,7 @@ class KeyHandler(Interface, Common):
     def tvitem_click(self, event, item=None):
         self.save_records()
 
-        sel_items = self.tv.selection() if item is None else item
+        sel_items = self.treeview_object.selection() if item is None else item
         if sel_items:
             popup = Interface.popupEntry(self.root, title="更改 object 名稱", string="請輸入新的名稱。")
             self.root.wait_window(popup.top)
@@ -753,7 +758,7 @@ class KeyHandler(Interface, Common):
                     self.results_dict.pop(k)
                     self.dist_records[self.n_frame].pop(k)
 
-                    self.tv.delete(k)
+                    self.treeview_object.delete(k)
                     ind = self.object_name[k]['ind'] + 2
                     self.all_buttons[ind].grid_forget()
                     self.all_buttons.pop(ind)
@@ -769,7 +774,7 @@ class KeyHandler(Interface, Common):
                 else:
                     ind = self.object_name[self.suggest_ind[0][0]]['ind'] + 2
                 self.all_buttons[ind].focus_force()
-                self.suggest_label.grid(row=ind, column=1, sticky="nwes", padx=5, pady=5)
+                self.label_suggest.grid(row=ind, column=1, sticky="nwes", padx=5, pady=5)
 
             # update buttons number
             on_ind = [v['ind'] for k, v in self.object_name.items() if v['on']]
@@ -786,7 +791,7 @@ class KeyHandler(Interface, Common):
                         self.center_root(r=35)
                 else:
                     try:
-                        self.tv.delete(letter[i-2])
+                        self.treeview_object.delete(letter[i-2])
                     except:
                         LOGGER.info(letter[i-2])
 
@@ -831,7 +836,7 @@ class KeyHandler(Interface, Common):
                         self.tmp_results_dict.pop(k)
                         self.dist_records[self.n_frame].pop(k)
 
-                        self.tv.delete(k)
+                        self.treeview_object.delete(k)
                         self.all_buttons[-1].grid_forget()
                         self.all_buttons.pop()
                         self.center_root(r=-35)

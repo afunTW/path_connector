@@ -10,11 +10,19 @@ from scipy.linalg import _fblas
 from src.path_connector import PathConnector
 
 LOGGER = logging.getLogger(__name__)
-
+LOGGERS = [
+    LOGGER,
+    logging.getLogger('src.path_connector'),
+    logging.getLogger('src.viewer'),
+    logging.getLogger('src.interface'),
+    logging.getLogger('src.keyhadler'),
+    logging.getLogger('src.utils'),
+    logging.getLogger('src.yoloreader'),
+]
 
 def argparser():
     parser = argparse.ArgumentParser(description='Some arguement for path connector')
-    parser.add_argument('-m', '--max', dest='max', type=int, default=300, help='maximum frame for displaying path')
+    parser.add_argument('-m', '--max', dest='max', type=int, default=150, help='maximum frame for displaying path')
     parser.add_argument('-t', '--tolerance', dest='tolerance', type=int, default=38, help='maximum tolerance of distance')
     return parser
 
@@ -35,6 +43,7 @@ def log_handler(*loggers):
 
 
 if __name__ == '__main__':
+    log_handler(*LOGGERS)
     parser = argparser()
     args = parser.parse_args()
     pc = PathConnector(args.max, args.tolerance)

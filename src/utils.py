@@ -27,7 +27,7 @@ class catchtime(object):
 class Utils(object):
 
     def draw(self, tup=None):
-        if self.is_root_exist:
+        if self.root:
             results_dict = self.results_dict if not self.is_manual else self.tmp_results_dict
             with catchtime("0") as f:
                 # draw connected paths

@@ -73,7 +73,6 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.total_frame = None
         self.__yolo_results__ = None
         self.__total_n_frame__ = None
-        self.is_root_exist = True
         self.is_finish = False
 
         # basic variables
@@ -126,16 +125,8 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
 
         # tkinter widgets
         self.root = None
-        self.label_nframe = None
-        self.label_fps = None
-        self.label_elapsed = None
-        self.label_mvpts = None
         self.n_frame_var = None
-        self.var_max_path = None
         self.tol_var = None
-        self.var_show_bbox = None
-        self.var_show_tracked = None
-        self.var_show_rat = None
         self.all_buttons = []
         self._init_width = None
         self._init_height = None
@@ -209,7 +200,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
 
     def update_label(self):
         # text_nframe = 'Current Frame: '
-        if self.is_root_exist:
+        if self.root:
             text_video_name = self.video_path.split('/')[-1]
             text_time = self._get_timestring(self.n_frame, self.fps)
 
@@ -221,7 +212,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
             self.label_display.after(200, self.update_label)
 
     def update_draw(self, tup=None):
-        if self.is_root_exist:
+        if self.root:
             if self.last_n_frame != self.n_frame:
                 self.update_frame()
                 self.last_n_frame = self.n_frame

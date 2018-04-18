@@ -45,10 +45,7 @@ COLOR = [
 ]
 
 # UI required variables
-# letter = [chr(i) for i in range(ord('A'), ord('Z')+1)]
-letter = [str(i) for i in range(1, 20)]
 LARGE_FONT= ("Verdana", 12)
-MULTI = False
 
 class PathConnector(YOLOReader, KeyHandler, Utils):
 
@@ -109,7 +106,6 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.fp_pts = []
         self.undo_records = []
         self.tracked_frames = []
-        self.multi = MULTI
         self.suggest_ind = []
         self.current_pts = None
         self.current_pts_n = None

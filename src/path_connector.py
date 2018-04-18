@@ -214,8 +214,8 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
             text_time = self._get_timestring(self.n_frame, self.fps)
 
             self.label_video_name.configure(text='影像檔名: %s' % text_video_name)
-            self.label_nframe_v.configure(text="當前幀數: %s/%s" % (self.n_frame, self.total_frame))
             self.label_video_time.configure(text='影像時間: %s' % text_time)
+            self.label_nframe_v.configure(text="當前幀數: %s/%s" % (self.n_frame, self.total_frame))
             self.scale_nframe_v.set(self.n_frame)
 
             self.label_display.after(200, self.update_label)
@@ -299,7 +299,6 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         else:
             r.destroy()
             self.init_video()
-            # start
             self.run()
 
     def save_records(self):
@@ -374,6 +373,16 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.label_display.bind('<Button-1>', self.on_mouse)
         self.label_display.bind('<Button-3>', self.on_mouse)
         self.label_display.bind('<Motion>', self.on_mouse_mv)
+        self.scale_nframe_v.config(from_=1, to_=self.total_frame, command=self.set_nframe)
+        self.scrollbar_object.config(command=self.treeview_object.yview)
+        self.treeview_object.config(yscrollcommand=self.scrollbar_object.set)
+        self.treeview_object.bind('<Double-Button-1>', self.tvitem_click)
+        self.btn_return.config(command=self.on_return)
+        self.btn_manual.config(command=self.on_manual_label)
+        self.btn_reset.config(command=self.on_reset)
+        self.btn_remove.config(command=self.on_remove)
+        self.btn_replay.config(command=self.on_view)
+        self.scale_max_path.config(command=self.set_max)
 
     # main logic for runing UI
     def run(self):
@@ -393,26 +402,9 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.tol_var = tk.DoubleVar()
         self.tol_var.set(self.tol)
 
-        text_video_name =self.video_path.split('/')[-1]
-        text_time = self._get_timestring(self.n_frame, self.fps)
-
         # convert to format that ImageTk require
         self.image = ImageTk.PhotoImage(Image.fromarray(self._frame))
-
-        # frame for displaying image label
         self.label_display.config(image=self.image)
-        self.label_nframe_v.config(text="當前幀數: %s/%s" % (self.n_frame, self.total_frame))
-        self.scale_nframe_v.config(from_=1, to_=self.total_frame, command=self.set_nframe, cursor='hand2')
-        self.scale_nframe_v.set(self.n_frame)
-
-        # operation frame that will display all application relevent information
-        self.label_video_name.config(text='影像檔名: %s' % text_video_name)
-        self.label_video_time.config(text='影像時間: %s' % text_time)
-        self.scrollbar_object.config(command=self.treeview_object.yview)
-        self.treeview_object.config(yscrollcommand=self.scrollbar_object.set)
-        self.treeview_object.bind('<Double-Button-1>', self.tvitem_click)
-
-        self.update_info()
 
         # load fixed legends
         legend_images = self._get_fixed_legends()
@@ -429,13 +421,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.label_suggest.config(image=photo)
 
         # operation buttons
-        self.btn_return.config(command=self.on_return)
-        self.btn_manual.config(command=self.on_manual_label)
-        self.btn_reset.config(command=self.on_reset)
-        self.btn_remove.config(command=self.on_remove)
-        self.btn_replay.config(command=self.on_view)
         self.var_max_path.set(self.maximum)
-        self.scale_max_path.config(command=self.set_max)
         self.scale_max_path.set(self.maximum)
 
         # suggest default option

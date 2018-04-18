@@ -114,18 +114,7 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
         self.all_buttons = []
 
         on_ind = [v['ind'] for k, v in self.object_name.items() if v['on']]
-        for i, k in enumerate(['誤判 (d)', '新目標 (a)'] + sorted(self.object_name.keys())):
-            if i in [0, 1]:
-                bg = None
-                b = ttk.Button(self.labelframe_target, text=k, command=lambda clr=k: self.on_button(clr), bg=bg, width=40)
-                b.grid(row=i, column=0, sticky=tk.W+tk.E+tk.N+tk.S, padx=5, pady=5)
-
-            else:
-                bg = self.color_name[self.object_name[k]['ind']][1].lower()
-                b = tk.Button(self.labelframe_target, text=self.object_name[k]['display_name'], command=lambda clr=k: self.on_button(clr), bg=bg)
-                b.grid(row=i, column=0, sticky=tk.W+tk.E+tk.N+tk.S, padx=5, pady=5)
-
-            self.all_buttons.append(b)
+        self._render_op_buttons()
 
         # reset table information
         x = self.treeview_object.get_children()

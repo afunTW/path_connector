@@ -199,8 +199,8 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
                         values=(color_name, is_detected, last_detected_frame)
                     )
 
+    # update video info
     def update_label(self):
-        # text_nframe = 'Current Frame: '
         if self.root:
             text_video_name = self.video_path.split('/')[-1]
             text_time = self._get_timestring(self.n_frame, self.fps)
@@ -212,6 +212,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
 
             self.label_display.after(200, self.update_label)
 
+    # get the current frame when self.last_n_frame != self.n_frame (redundant)
     def update_draw(self, tup=None):
         if self.root:
             if self.last_n_frame != self.n_frame:
@@ -225,15 +226,14 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
                 if not self.is_calculate:
                     self.image = ImageTk.PhotoImage(Image.fromarray(self._frame))
                 if not self.safe:
-                    self.label_display.configure(image=self.image)
-                    self.label_display.image = self.image
-            except:
-                pass
+                    self.label_display.config(image=self.image)
+            except Exception as e:
+                LOGGER.exception(e)
 
             self.label_display.after(20, self.update_draw)
 
     def update_track(self, ind):
-        if len(self.tracked_frames) > 0 and ind < (len(self.tracked_frames) - 1) and self.safe: #  and self.safe:
+        if len(self.tracked_frames) > 0 and ind < (len(self.tracked_frames) - 1) and self.safe:
             frame = self.tracked_frames[ind]
             if ind < (len(self.tracked_frames) - 1):
                 ind += 1
@@ -245,6 +245,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
             self.safe = False
             self.label_display.configure(image=self.image)
 
+    # entry window to load video
     def start(self):
         root = tk.Tk()
         if os.name == 'nt':
@@ -266,6 +267,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         root.bind('<Escape>', lambda event: root.destroy())
         root.mainloop()
 
+    # load video
     def init_video(self):
         self.video = cv2.VideoCapture(self.video_path)
         self.width = int(self.video.get(3))
@@ -277,6 +279,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.__total_n_frame__ = len(self.__yolo_results__)
         self.is_finish = False
 
+    # start > 開始 (press) > ready > run
     def ready(self, r):
         if self.video_path is not None:
             yolo_results_path = self.video_path.split('.avi')[0] + '.txt'
@@ -293,9 +296,20 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
             self.init_video()
             self.run()
 
+    # save records for undo, max_length=15
     def save_records(self):
-
-        records = (copy.deepcopy(self.results_dict), copy.deepcopy(self.tmp_results_dict), {**self.dist_records}, copy.deepcopy(self.hit_condi), self.stop_n_frame, self.undone_pts, self.current_pts, self.current_pts_n, copy.deepcopy(self.suggest_ind), copy.deepcopy(self.object_name))
+        records = (
+            copy.deepcopy(self.results_dict),
+            copy.deepcopy(self.tmp_results_dict),
+            {**self.dist_records},
+            copy.deepcopy(self.hit_condi),
+            self.stop_n_frame,
+            self.undone_pts,
+            self.current_pts,
+            self.current_pts_n,
+            copy.deepcopy(self.suggest_ind),
+            copy.deepcopy(self.object_name)
+        )
 
         if len(self.undo_records) > 0:
             if self.stop_n_frame != self.undo_records[-1][1]:
@@ -306,8 +320,8 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         if len(self.undo_records) >= 15:
             self.undo_records = self.undo_records[-15:]
 
+    # set root window at the center
     def center_root(self, r=0):
-        # self.root.update()
         self.root.update_idletasks()
         w = self.root.winfo_screenwidth()
         h = self.root.winfo_screenheight()
@@ -318,6 +332,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         r = 0 if self.root.state() == 'zoomed' else r
         self.root.geometry("%dx%d+%d+%d" % (size[0], size[1]+r, x, y))
 
+    # load .dat file if exists
     def load_history(self):
         self.history_file = self.video_path.split('.avi')[0] + '.dat'
         if os.path.isfile(self.history_file):
@@ -376,7 +391,6 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.btn_replay.config(command=self.on_view)
         self.scale_max_path.config(command=self.set_max)
 
-    # main logic for runing UI
     def run(self):
 
         self.n_frame = 1

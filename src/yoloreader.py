@@ -1,17 +1,14 @@
-import numpy as np
-import cv2
 import copy
-from PIL import Image, ImageTk
-
-# from mahotas.features import haralick, zernike
-# from skimage.feature import hog, local_binary_pattern
-from skimage.measure import compare_ssim
-from src.utils import catchtime
 import logging
 
-LOGGER = logging.getLogger(__name__)
+import cv2
+import numpy as np
+from PIL import Image, ImageTk
+from skimage.measure import compare_ssim
 
-# letter = [chr(i) for i in range(ord('A'), ord('Z')+1)]
+from src.utils import catchtime
+
+LOGGER = logging.getLogger(__name__)
 letter = [str(i) for i in range(1, 20)]
 
 N_SHOW = 25 # thres for update image frame

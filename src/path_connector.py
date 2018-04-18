@@ -279,6 +279,16 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.__total_n_frame__ = len(self.__yolo_results__)
         self.is_finish = False
 
+        # init related params
+        self.object_name = {}
+        self.results_dict = {}
+        self.tmp_results_dict = {}
+        self.dist_records = {}
+        self.label_dict = {}
+        self.undo_records = []
+        self.fp_pts = []
+        self.drag_flag = None
+
     # start > 開始 (press) > ready > run
     def ready(self, r):
         if self.video_path is not None:

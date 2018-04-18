@@ -36,7 +36,8 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
             b.config(cursor='hand2')
             self.all_buttons.append(b)
 
-    # reload the interface after reloading a new video; pending, add judgement for new video (like if a YOLO txt file existed)
+    # reload the interface after reloading a new video
+    # pending, add judgement for new video (like if a YOLO txt file existed)
     def on_load(self):
         path = self.get_path(res=True)
         yolo_results_path = path.split('.avi')[0] + '.txt'
@@ -51,14 +52,6 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
             old_len = len(self.object_name)
             self.video.release()
             self.init_video()
-            self.object_name = dict()
-            self.results_dict = dict()
-            self.tmp_results_dict = dict()
-            self.dist_records = dict()
-            self.label_dict = dict()
-            self.undo_records = []
-            self.fp_pts = []
-            self.drag_flag = None
             if self.is_manual:
                 self.chg_mode()
 

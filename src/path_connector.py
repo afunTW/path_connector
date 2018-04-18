@@ -157,6 +157,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         image = Image.open(path)
         return ImageTk.PhotoImage(image)
 
+    # read the video frame by given ind
     def update_frame(self, ind=None):
         ind = ind if ind is not None else self.n_frame - 1
         self.video.set(cv2.CAP_PROP_POS_FRAMES, ind)
@@ -166,33 +167,37 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         if not ok:
             self.msg("Can't open the video")
 
-    def thread_update(self, ind):
-        td = threading.Thread(target=self.update_frame, args=(ind, ))
-        td.start()
-
-    def thread_pop(self):
-        td = threading.Thread(target=self.pop_msg, args=())
-        td.start()
-
-    # FIXME: using if...else... rather then try...except...
+    # update object information table
     def update_info(self):
-        # update object information table
-        if self.treeview_object is not None:
+        if self.treeview_object:
             for n in sorted([k for k, v in self.object_name.items() if v['on']]):
                 if self.is_manual:
                     rd = self.tmp_results_dict[n]
                 else:
                     rd = self.results_dict[n]
-                try:
-                    is_detected = rd['n_frame'].index(self.n_frame)
+
+                # check if beetle is detected in current frame
+                if 'n_frame' in rd and self.n_frame in rd['n_frame']:
                     is_detected = True
-                except:
+                else:
                     is_detected = False
-                try:
-                    self.treeview_object.item(n, text=self.object_name[n]['display_name'], values=(self.color_name[self.object_name[n]['ind']][0], is_detected, rd['n_frame'][-1]))
-                except:
+
+                # update info table
+                color_name = self.color_name[self.object_name[n]['ind']][0]
+                last_detected_frame = rd['n_frame'][-1]
+                if self.treeview_object.exists(n):
+                    self.treeview_object.item(
+                        n,
+                        text=self.object_name[n]['display_name'],
+                        values=(color_name, is_detected, last_detected_frame)
+                    )
+                else:
                     self.object_name[n]['on'] = True
-                    self.treeview_object.insert('', 'end', n, text=n, values=(self.color_name[self.object_name[n]['ind']][0], is_detected, rd['n_frame'][-1]))
+                    self.treeview_object.insert(
+                        '', 'end', n,
+                        text=n,
+                        values=(color_name, is_detected, last_detected_frame)
+                    )
 
     def update_label(self):
         # text_nframe = 'Current Frame: '

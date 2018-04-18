@@ -113,7 +113,7 @@ class PathConnectorViewer(object):
         # display_meta
         self.label_nframe_v = ttk.Label(self.labelframe_image)
         self.label_nframe_v.grid(row=0, column=0)
-        self.scale_nframe_v = ttk.Scale(self.labelframe_image)
+        self.scale_nframe_v = ttk.Scale(self.labelframe_image, cursor='hand2')
         self.scale_nframe_v.grid(row=1, column=0, sticky='news', padx=10)
 
         # info

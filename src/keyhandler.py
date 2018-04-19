@@ -244,7 +244,8 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
             self.label_display.config(cursor='arrow')
             self.drag_flag = None
 
-    # drag method for manual label mode
+    # left-clicked + move: drag method for manual label mode
+    # FIXME: render failed with comment code
     def on_mouse_drag(self, event):
         if self.root.state() == 'zoomed':
             p1 = int(event.x / self._c_width)
@@ -258,6 +259,29 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
             flags = self.tmp_results_dict[self.drag_flag]['n_frame']
             path = self.tmp_results_dict[self.drag_flag]['path']
             wh = self.tmp_results_dict[self.drag_flag]['wh']
+
+            # # get index of path if existed and then update with new coordinate
+            # # otherwise, find the minimum index that are bigger than self.frame
+            # if self.n_frame in flags:
+            #     ind = flags.index(self.n_frame)
+            #     self.tmp_results_dict[self.drag_flag]['path'][ind] = p
+            #     self.min_label_ind = min(self.min_label_ind, self.n_frame) if self.min_label_ind else self.n_frame
+            # else:
+            #     tmp = [flags.index(v) for v in flags if v >= self.n_frame]
+            #     # concatenate the coordinate among corresponding index if the minimum exist
+            #     # otherwise, append the coordinate on the end of the path
+            #     if tmp:
+            #         ind = min(tmp)
+            #         self.tmp_results_dict[self.drag_flag].update({
+            #             'n_frame': flags.insert(ind, self.n_frame),
+            #             'path': path.insert(ind, p),
+            #             'wh': wh.insert(ind, wh[ind])
+            #         })
+            #         self.min_label_ind = min(self.min_label_ind, self.n_frame) if self.min_label_ind else self.n_frame
+            #     else:
+            #         self.tmp_results_dict[self.drag_flag]['n_frame'].append(self.n_frame)
+            #         self.tmp_results_dict[self.drag_flag]['path'].append(p)
+            #         self.tmp_results_dict[self.drag_flag]['wh'].append((0, 0))
             # get index of path if existed and then update with new coordinate
             try:
                 ind = flags.index(self.n_frame)
@@ -285,7 +309,21 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
                 self.label_dict[self.drag_flag] = {'path': [], 'n_frame': [], 'wh': []}
             flags = self.label_dict[self.drag_flag]['n_frame']
             path = self.label_dict[self.drag_flag]['path']
-            # wh = self.label_dict[self.drag_flag]['wh']
+
+            # if self.n_frame in flags:
+            #     ind = flags.index(self.n_frame)
+            #     self.label_dict[self.drag_flag]['path'][ind] = p
+            # else:
+            #     tmp = [flags.index(v) for v in flags if v >= self.n_frame]
+            #     if tmp:
+            #         ind = min(tmp)
+            #         self.label_dict[self.drag_flag].update({
+            #             'n_frame': flags.insert(ind, self.n_frame),
+            #             'path': path.insert(ind, p)
+            #         })
+            #     else:
+            #         self.label_dict[self.drag_flag]['n_frame'].append(self.n_frame)
+            #         self.label_dict[self.drag_flag]['path'].append(p)
 
             try:
                 ind = flags.index(self.n_frame)
@@ -325,25 +363,25 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
                     break
 
         run = True
-        replace = False
 
+        # if the label was exist
         if clr in [k for k, v in self.object_name.items() if v['on']]:
             is_assigned = self.results_dict[clr]['n_frame'][-1] == self.stop_n_frame
             if not is_assigned:
                 self.results_dict[clr]['path'].append(p)
                 self.results_dict[clr]['n_frame'].append(n)
                 self.results_dict[clr]['wh'].append((w, h)) # append last bounding box's width and height
-                LOGGER.info('appended!')
+                LOGGER.info('Case NOT_ASSIGNED - Assigned {} to stop bbox at {}'.format(clr, p))
             else:
                 res = self.ask_yes_no(clr)
                 if res:
+                    LOGGER.info('Case ASSIGNED - Assigned {} from original {} to stop bbox at {}'.format(
+                        clr, self.results_dict[clr]['path'][-1], p
+                    ))
                     self.undone_pts.append((self.results_dict[clr]['path'][-1], n))
-                    LOGGER.info(self.undone_pts)
                     self.results_dict[clr]['path'][-1] = p
                     self.results_dict[clr]['wh'][-1] = (w, h)
-                    LOGGER.info('appended!')
                     run = True
-                    replace = True
                 else:
                     run = False
         elif clr == '新目標 (a)':
@@ -353,33 +391,37 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
                     new_key = letter[len(self.object_name)]
                     self.results_dict[new_key] = {'path': [p], 'n_frame': [n], 'wh': [(w, h)]}
                     self.object_name[new_key] = {'ind': len(self.object_name), 'on': True, 'display_name': new_key}
-                    try:
-                        self.dist_records[n][new_key] = dict()
-                    except:
-                        self.dist_records[n] = dict()
-                        self.dist_records[n][new_key] = dict()
-                    self.dist_records[n][new_key]['dist'] = [0]
-                    self.dist_records[n][new_key]['center'] = [p]
-                    self.dist_records[n][new_key]['below_tol'] = [True]
-                    self.dist_records[n][new_key]['wh'] = [(w,h)]
-
+                    if not isinstance(self.dist_records[n], dict):
+                        self.dist_records[n] = {}
+                    self.dist_records[n][new_key] = {
+                        'dist': [0],
+                        'center': [p],
+                        'below_tol': [True],
+                        'wh': [(w, h)]
+                    }
                     self.hit_condi.append((new_key, 0))
-                    LOGGER.info('add button', self.hit_condi)
 
                     # add buttons
-                    bg = self.color_name[self.object_name[new_key]['ind']][1].lower()
-                    # LOGGER.info("object name %s\n" % self.object_name)
-                    # LOGGER.info('Add button', self.all_buttons, len(self.all_buttons))
-                    b = tk.Button(self.labelframe_target, text=new_key, command=lambda clr=new_key: self.on_button(clr), bg=bg)
+                    color_setting = self.color_name[self.object_name[new_key]['ind']]
+                    bg = color_setting[1].lower()
+                    b = tk.Button(
+                        self.labelframe_target,
+                        text=new_key,
+                        command=lambda clr=new_key: self.on_button(clr),
+                        bg=bg
+                    )
                     self.all_buttons.append(b)
-                    # LOGGER.info('length %s' % (len(self.all_buttons) - 1))
-                    for i, b in enumerate(self.all_buttons):
-                        b.grid(row=i, column=0, sticky=tk.W+tk.E+tk.N+tk.S, padx=5, pady=5)
+                    b.grid(row=self.all_buttons.index(b), column=0, sticky='news', padx=5, pady=5)
                     self.center_root(r=35)
+
                     # add table info
                     rd = self.results_dict[new_key]
-                    self.treeview_object.insert('', 'end', new_key, text=new_key, values=(self.color_name[self.object_name[new_key]['ind']][0], rd['path'][-1], rd['n_frame'][-1]))
-                    LOGGER.info('added!')
+                    self.treeview_object.insert(
+                        '', 'end', new_key,
+                        text=new_key,
+                        values=(color_setting[0], rd['path'][-1],rd['n_frame'][-1]))
+
+                    LOGGER.info('Add button - label {} close to bbox {}'.format(new_key, 0))
                 else:
                     self.drag_flag = 'new'
                     run = False
@@ -391,18 +433,16 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
             LOGGER.info('deleted!')
         else:
             run = False
-            LOGGER.info('A not considered case happened!')
+            LOGGER.info('A not considered case happened - label {}'.format(clr))
 
         if run:
             if len(self.undone_pts) == 0:
                 self.root.update()
                 self.run_calc(self.stop_n_frame + 1)
             else:
-                LOGGER.info(self.suggest_ind)
                 if len(self.suggest_ind) > 0:
                     self.suggest_ind.pop(0)
                 self.suggest_options(self.undone_pts, self.n_frame)
-                LOGGER.info(self.suggest_ind)
                 self.current_pts, self.current_pts_n = self.undone_pts.pop(0)
 
     # move to previous frame

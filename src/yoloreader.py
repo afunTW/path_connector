@@ -67,7 +67,7 @@ class YOLOReader(object):
             label_ind = [k for k, v in self.label_dict.items() if n_frame in v['n_frame']]
             for k in label_ind:
                 i = self.label_dict[k]['n_frame'].index(n_frame)
-                print(self.results_dict[k])
+                LOGGER.info(self.results_dict[k])
                 self.results_dict[k]['n_frame'].append(n_frame)
                 self.results_dict[k]['path'].append(self.label_dict[k]['path'][i])
                 self.results_dict[k]['wh'].append(self.results_dict[k]['wh'][-1])
@@ -150,11 +150,6 @@ class YOLOReader(object):
                 sorted_indexes = {k: sorted(range(len(v['dist'])), key=lambda k: v['dist'][k]) for k, v in tmp_dist_record.items()}
                 hit_condi = [(k, sorted_indexes[k][0]) for k in on_keys if tmp_dist_record[k]['below_tol'][sorted_indexes[k][0]]]
 
-                # if n_frame > 480 and n_frame < 485:
-                #     print(n_frame)
-                #     print(tmp_dist_record)
-                #     print(hit_condi)
-
                 # the easiest part: the length of hit_condi is same as the number of objects
                 if n_frame == 1:
                     pass
@@ -206,13 +201,13 @@ class YOLOReader(object):
                                     not_assigned_indices.append(ind)
                             # if this center of bounding box is not potentially connected in next 100 frames, just ignored it.
                             else:
-                                print('Line 240: temp < THRES_NOT_ASSIGN_FORWARD_N')
+                                LOGGER.info('Line 240: temp < THRES_NOT_ASSIGN_FORWARD_N')
 
                     if not self.is_calculate:
-                        print('not assigned boxes')
-                        print('distance records %s' % tmp_dist_record)
-                        print('object and bbox match pairs %s' % hit_condi)
-                        print('index of not assigned bounding boxes: %s' % not_assigned_indices)
+                        LOGGER.info('not assigned boxes')
+                        LOGGER.info('distance records %s' % tmp_dist_record)
+                        LOGGER.info('object and bbox match pairs %s' % hit_condi)
+                        LOGGER.info('index of not assigned bounding boxes: %s' % not_assigned_indices)
 
                 # the length of hit_condi is same as the number of nearest indexes
                 elif len(set([v for k, v in hit_condi])) == len(hit_condi):
@@ -237,7 +232,7 @@ class YOLOReader(object):
                             # if the not assigned boxes are too near with assigned keys, got thres
                             if sum([v['dist'][ind] <= THRES_NEAR_DIST for k, v in tmp_dist_record.items() if k in assigned_keys]) > 1:
                                 # 如果往後好幾個 frame 可以連起來就停下來
-                                print("Too near with existing bboxes", ind)
+                                LOGGER.info('Too near with existing bboxes {}'.format(ind))
                                 temp = 0
                                 fp_n = min(n_frame + int(THRES_NOT_ASSIGN_FORWARD_N_MAX/2 - 1), len(self.__yolo_results__))
                                 forward_points = [eval(self.__yolo_results__[i])[1] for i in range(n_frame - 1, fp_n)]
@@ -337,11 +332,11 @@ class YOLOReader(object):
                                         LOGGER.info('Line 240: temp < THRES_NOT_ASSIGN_FORWARD_N')
 
                         if not self.is_calculate:
-                            print('Case: not assigned boxes')
-                            print('distance records %s' % tmp_dist_record)
-                            print('object and bbox match pairs %s' % hit_condi)
-                            print('index of not assigned bounding boxes: %s' % not_assigned_indices)
-                            print('lost boxes key %s' % not_assigned_keys)
+                            LOGGER.info('Case: not assigned boxes')
+                            LOGGER.info('distance records %s' % tmp_dist_record)
+                            LOGGER.info('object and bbox match pairs %s' % hit_condi)
+                            LOGGER.info('index of not assigned bounding boxes: %s' % not_assigned_indices)
+                            LOGGER.info('lost boxes key %s' % not_assigned_keys)
 
                 # there are boxes that hit condition with multi objects
                 else:
@@ -398,9 +393,9 @@ class YOLOReader(object):
                     # if there is any condition that wasn't considered
                     else:
                         self.is_calculate = False
-                        print("A not considered case happened!")
-                        print(tmp_dist_record)
-                        print(hit_condi)
+                        LOGGER.info("A not considered case happened!")
+                        LOGGER.info(tmp_dist_record)
+                        LOGGER.info(hit_condi)
             # just ignored if there is no bounding box in this frame
             else:
                 on_keys = sorted([k for k, v in self.object_name.items() if v['on']])
@@ -408,7 +403,7 @@ class YOLOReader(object):
             if self.is_calculate:
                 n_frame += 1
             else:
-                print('paths connecting stops at %s' % n_frame)
+                LOGGER.info('paths connecting stops at %s' % n_frame)
 
             # record animation
             if n_frame % n_show == 0 and self.label_display is not None:
@@ -455,7 +450,7 @@ class YOLOReader(object):
                         nh = nn_h
                         nw = nn_w
                     else:
-                        print(df_w)
+                        LOGGER.info(df_w)
 
                     newsize = (nw, nh)
                     self._frame = cv2.resize(self._frame, newsize)
@@ -502,9 +497,9 @@ class YOLOReader(object):
     # algorithm for suggesting a reasonable option
     def suggest_options(self, undone_pts, nframe):
         on_keys = [k for k, v in self.object_name.items() if v['on']]
-        print("on keys: ", on_keys)
         hit_condi = self.hit_condi
-        print("suggest_options", hit_condi)
+        LOGGER.info('Active label - {}'.format(on_keys))
+        LOGGER.info('Suggest options (label name, bbox index) - {}'.format(hit_condi))
         for i, tup in enumerate(undone_pts):
             p, nframe = tup
             tmp_record = self.dist_records[nframe]

@@ -121,13 +121,13 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
         for item in x:
             self.treeview_object.delete(item)
 
-    # run bbox assignment algorithm
+    # get bbox in current frame
     def run_calc(self, ind):
         self.cancel_id = None
         self.update_frame()
         self.calculate_path(ind)
 
-    # break from bbox assigment algorithm
+    # interrupt the process of calculate_path
     def cancel_calc(self):
         if self.cancel_id is not None:
             self.label_display.after_cancel(self.cancel_id)
@@ -154,10 +154,8 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
                 for k, v in self.tmp_results_dict.items():
                     path = v['path']
                     flag = v['n_frame']
-                    try:
-                        ind = max([flag.index(f) for f in flag if f <= self.n_frame])
-                    except:
-                        ind = 0
+                    ind = [flag.index(f) for f in flag if f <= self.n_frame]
+                    ind = max(ind) if ind else 0
                     if self.in_circle((self.mv_x, self.mv_y), path[ind], 15):
                         self.drag_flag = k
                         break

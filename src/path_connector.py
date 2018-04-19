@@ -441,7 +441,6 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.scale_max_path.set(self.maximum)
 
         # suggest default option
-        LOGGER.info('Suggestion: {}'.format(self.suggest_ind))
         if self.suggest_ind[0][0] == 'fp':
             ind = 0
         elif self.suggest_ind[0][0] == 'new':

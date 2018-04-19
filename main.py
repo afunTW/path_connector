@@ -15,7 +15,7 @@ LOGGERS = [
     logging.getLogger('src.path_connector'),
     logging.getLogger('src.viewer'),
     logging.getLogger('src.interface'),
-    logging.getLogger('src.keyhadler'),
+    logging.getLogger('src.keyhandler'),
     logging.getLogger('src.utils'),
     logging.getLogger('src.yoloreader'),
 ]

@@ -198,13 +198,11 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
 
     # left click enter manual label mode, right click remove label
     def on_mouse(self, event):
+        # n=1: left-click; n=3: right-click
         n = event.num
-        # if double click while normal mode, enter manual label mdoe
-        if n == 1 and not self.is_manual:
-            pass
-            # self.chg_mode()
+
         # if right click while manual label mode
-        elif n == 3 and self.is_manual:
+        if n == 3 and self.is_manual:
             self.undo_manual()
         # if double left click while manual label mode
         elif self.is_manual and self.drag_flag == 'new':
@@ -216,29 +214,31 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
                 p = (p1, p2)
 
             new_key = letter[len(self.object_name)]
-            self.min_label_ind = self.n_frame if self.min_label_ind is None else min(self.n_frame, self.min_label_ind)
+            self.min_label_ind = min(self.n_frame, self.min_label_ind) if self.min_label_ind else self.n_frame
             self.label_dict[new_key] = {'path': [p], 'n_frame': [self.n_frame], 'wh': [(0, 0)]}
             self.tmp_results_dict[new_key] = {'path': [p], 'n_frame': [self.n_frame], 'wh': [(0, 0)]}
             self.object_name[new_key] = {'ind': len(self.object_name), 'on': True, 'display_name': new_key}
 
-            try:
-                self.dist_records[self.n_frame][new_key] = dict()
-            except:
-                self.dist_records[self.n_frame] = dict()
-                self.dist_records[self.n_frame][new_key] = dict()
-            self.dist_records[self.n_frame][new_key]['dist'] = [0]
-            self.dist_records[self.n_frame][new_key]['center'] = [p]
-            self.dist_records[self.n_frame][new_key]['below_tol'] = [True]
-            self.dist_records[self.n_frame][new_key]['wh'] = [(0,0)]
+            if not isinstance(self.dist_records[self.n_frame], dict):
+                self.dist_records[self.n_frame] = {}
+            self.dist_records[self.n_frame][new_key] = {
+                'dist': [0],
+                'center': [p],
+                'below_tol': [True],
+                'wh': [(0, 0)]
+            }
 
             # add buttons
             bg = self.color_name[self.object_name[new_key]['ind']][1].lower()
-            b = tk.Button(self.labelframe_target, text=new_key, command=lambda clr=new_key: self.on_button(clr), bg=bg)
+            b = tk.Button(
+                self.labelframe_target,
+                text=new_key,
+                command=lambda clr=new_key: self.on_button(clr),
+                bg=bg,
+                state='disabled'
+            )
             self.all_buttons.append(b)
-            for i, b in enumerate(self.all_buttons):
-                b.grid(row=i, column=0, sticky=tk.W+tk.E+tk.N+tk.S, padx=5, pady=5)
-            # b.grid(row=len(self.all_buttons) + 1, column=0, sticky=tk.W+tk.E+tk.N+tk.S, padx=5, pady=5)
-            b.config(state='disabled')
+            b.grid(row=self.all_buttons.index(b), column=0, sticky='news', padx=5, pady=5)
             self.center_root(r=35)
 
             self.label_display.config(cursor='arrow')
@@ -572,20 +572,15 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
             # root.destroy()
             top.destroy()
 
-        # root = tk.Tk()
-        # root.protocol('WM_DELETE_WINDOW', close)
-        # root.withdraw()
         top = tk.Toplevel()
         top.grab_set()
         top.protocol('WM_DELETE_WINDOW', close)
-        ## Display the window and wait for it to close
         top.title('Remove object')
         self.center(top)
         for k in sorted([k for k, v in self.object_name.items() if v['on']]):
             b = ttk.Button(top, text=self.object_name[k]['display_name'], command=lambda i = self.object_name[k]['ind']: destroy(i))
             b.pack(expand=True, fill=tk.BOTH)
         self.root.wait_window(top)
-        # root.mainloop()
 
     def on_show_boxes(self):
         self.is_show_boxes = not self.is_show_boxes

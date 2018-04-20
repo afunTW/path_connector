@@ -43,13 +43,16 @@ class YOLOReader(object):
         -----------------------------------------------------------------------
         ind: run this function start from ind-th frames
         n_show: records every n_show for displaying tracked results
+
+        self.__yolo_results__ = [frame index, [[x1, y1, w1, h1, prob1], [x2, ...], ...]]
         """
+        # n_key_used: 有出現過的 label 個數
         n_key_used = len(self.object_name.keys())
 
         self.is_calculate = True
-        n_frame = ind if ind is not None else self.n_frame
-        undone_pts = []
         self.suggest_ind = []
+        undone_pts = []
+        n_frame = ind or self.n_frame
 
         while self.is_calculate:
             if n_frame < self.__total_n_frame__:
@@ -78,17 +81,23 @@ class YOLOReader(object):
             if len(boxes) > 0:
                 self.dist_records[n_frame] = dict()
 
+                # on_keys: 有出現過而且有偵測到的 label
                 on_keys = sorted([k for k, v in self.object_name.items() if v['on']])
 
+                # boxes: 現在這個 frame 被 model 判斷是蟲, 而且機率大於 75% 的 bounding box
                 for i, box in enumerate(boxes):
                     ymin, xmin, ymax, xmax, score = box
                     x_c = int((xmin+xmax) / 2 + 0.5)
                     y_c = int((ymin+ymax) / 2 + 0.5)
-                    p = (x_c, y_c)
+                    p = (x_c, y_c)  # bbox center
                     w = int(xmax - xmin)
                     h = int(ymax - ymin)
-                    # if there is no keys, initiate
+
+                    # 沒有出現過任何 label 或是第一個 frame, init
                     if (n_key_used == 0 or n_frame == 1) and not self.is_manual:
+                        # temp: 符合最小距離的數量
+                        # fp_n: 看到未來第 n 個 frame 的 index (為了檢查是否有符合最小距離條件的 frame)
+                        # forward_points: 未來 n 個 frame 的 model 預測 bounding box 的結果
                         temp = 0
                         fp_n = min(n_frame + THRES_FORWARD_N_MAX, len(self.__yolo_results__))
                         forward_points = [eval(self.__yolo_results__[i])[1] for i in range(n_frame, fp_n)]
@@ -96,6 +105,7 @@ class YOLOReader(object):
                         for i, res in enumerate(forward_points):
                             min_dist = 99999
                             for b in res:
+                                # dist: default l2-norm (sqrt(x**2, y**2))
                                 ymin, xmin, ymax, xmax, score = b
                                 x_c = int((xmin+xmax) / 2 + 0.5)
                                 y_c = int((ymin+ymax) / 2 + 0.5)
@@ -107,25 +117,35 @@ class YOLOReader(object):
                             if min_dist < THRES_FORWARD_DIST:
                                 temp += 1
 
-                        # if was connected 10 frames in next 30 frames
+                        # 假如在未來 THRES_FORWARD_N_MAX (最多 50) 個 frame 以內
+                        # 與 box 的最小距離在 THRES_FORWARD_DIST (30) 以內的次數超過 THRES_FORWARD_N (10) 次
+                        # 自動分配 label name 並紀錄
                         if temp > THRES_FORWARD_N:
                             # append first point to results
                             chrac = letter[n_key_used]
-                            self.results_dict[chrac] = dict()
-                            self.results_dict[chrac]['path'] = [p]
-                            self.results_dict[chrac]['n_frame'] = [n_frame]
-                            self.results_dict[chrac]['wh'] = [(w, h)]
-
-                            self.object_name[chrac] = {'ind': n_key_used, 'on': True, 'display_name': chrac}
+                            self.results_dict[chrac] = {
+                                'path': [p],
+                                'n_frame': [n_frame],
+                                'wh': [(w, h)]
+                            }
+                            self.object_name[chrac] = {
+                                'ind': n_key_used,
+                                'on': True,
+                                'display_name': chrac
+                            }
                             n_key_used += 1
 
                             # record distance history
-                            self.dist_records[n_frame][chrac] = dict()
-                            self.dist_records[n_frame][chrac]['dist'] = [0]
-                            self.dist_records[n_frame][chrac]['center'] = [p]
-                            self.dist_records[n_frame][chrac]['below_tol'] = [True]
-                            self.dist_records[n_frame][chrac]['wh'] = [(w, h)]
+                            self.dist_records[n_frame][chrac] = {
+                                'dist': [0],
+                                'center': [p],
+                                'below_tol': [True],
+                                'wh': [(w, h)]
+                            }
 
+                    # 有出現過 label 而且不是第一個 frame
+                    # 對這個 frame 有被 detect 到的 label
+                    # 紀錄最近一次被 detect 到的座標到這個 bbox 的距離 (self.dist_records)
                     else:
                         # record all distance history first
                         for i, k in enumerate(on_keys):
@@ -136,12 +156,12 @@ class YOLOReader(object):
                                 self.dist_records[n_frame][k] = dict()
                                 self.dist_records[n_frame][k]['dist'] = [dist]
                                 self.dist_records[n_frame][k]['center'] = [p]
-                                self.dist_records[n_frame][k]['below_tol'] = [True if dist <= self.tol else False]
+                                self.dist_records[n_frame][k]['below_tol'] = [dist <= self.tol]
                                 self.dist_records[n_frame][k]['wh'] = [(w, h)]
                             else:
                                 self.dist_records[n_frame][k]['dist'].append(dist)
                                 self.dist_records[n_frame][k]['center'].append(p)
-                                self.dist_records[n_frame][k]['below_tol'].append(True if dist <= self.tol else False)
+                                self.dist_records[n_frame][k]['below_tol'].append(dist <= self.tol)
                                 self.dist_records[n_frame][k]['wh'].append((w, h))
 
                 # start judgement

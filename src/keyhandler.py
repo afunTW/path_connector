@@ -816,11 +816,11 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
             except:
                 pass
 
-            try:
+            if k in self.results_dict and self.n_frame in self.results_dict[k]['n_frame']:
                 ind = self.results_dict[k]['n_frame'].index(self.n_frame)
                 self.tmp_results_dict[k]['path'][ind] = self.results_dict[k]['path'][ind]
                 self.tmp_results_dict[k]['wh'][ind] = self.results_dict[k]['wh'][ind]
-            except:
+            else:
                 try:
                     ind = self.tmp_results_dict[k]['n_frame'].index(self.n_frame)
                     self.tmp_results_dict[k]['n_frame'].pop(ind)
@@ -837,8 +837,7 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
                         self.all_buttons.pop()
                         self.center_root(r=-35)
                 except Exception as e:
-                    # LOGGER.info('undo_manual', e)
-                    pass
+                    LOGGER.exception(e)
 
     def jump_frame(self):
         popup = Interface.popupEntry(self.root, title="移動幀數", string="請輸入介於 %s ~ %s 的數字。" % (1, self.total_frame), validnum=True)
@@ -851,4 +850,4 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
                 self.msg("請輸入介於 %s ~ %s 的數字。" % (1, self.total_frame))
                 self.jump_frame()
         except Exception as e:
-            LOGGER.info(e)
+            LOGGER.exception(e)

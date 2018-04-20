@@ -499,8 +499,7 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
                     i = int(event.char)
                     self.on_button([k for k, v in self.object_name.items() if v['ind'] == i - 1][0])
                 except Exception as e:
-                    LOGGER.info("event char: ", event.char)
-                    LOGGER.info('on_key error', e)
+                    LOGGER.exception('{} with event character {}'.format(e, event.char))
             elif sym == 'a':
                 self.on_button('新目標 (a)')
             elif sym in ['Delete', 'd']:
@@ -515,21 +514,12 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
         else:
             if sym == 'a':
                 self.on_button('新目標 (a)')
-                # if self.drag_flag is None:
-                #     if len(self.object_name) < 6:
-                #         self.drag_flag = 'new'
-                #     else:
-                #         self.msg('目標數量太多咯!')
-                # else:
-                #     self.drag_flag = None
-                # self.drag_flag = 'new' if self.drag_flag is None else None
             elif sym == 'q':
                 self.leave_manual_label()
             elif sym == 'j':
                 self.jump_frame()
             else:
                 pass
-                # LOGGER.info('on_key error %s' % type(sym))
 
     def set_max(self, s):
         v = int(float(s))
@@ -550,7 +540,6 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
         self.n_frame = self.stop_n_frame
 
     def leave_manual_label(self, event=None):
-
         if self.is_manual:
             # if exists label record
             if self.tmp_results_dict != self.results_dict:
@@ -558,33 +547,27 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
                 result = askyesno('確認', string, icon='warning')
                 if result:
                     self.results_dict = self.tmp_results_dict
-                    if self.min_label_ind is not None:
-
+                    if self.min_label_ind:
                         for k, v in self.results_dict.items():
                             try:
                                 flag = min([v['n_frame'].index(f) for f in v['n_frame'] if f >= self.min_label_ind])
                                 v['path'] = v['path'][:(flag + 1)]
                                 v['n_frame'] = v['n_frame'][:(flag + 1)]
                                 v['wh'] = v['wh'][:(flag + 1)]
-                            except:
-                                pass
+                            except Exception as e:
+                                LOGGER.exception(e)
 
                         self.run_calc(self.min_label_ind)
-                    else:
-                        pass
                 else:
                     self.object_name = self.undo_records[-1][-1]
-
             self.chg_mode()
-        # else:
-        #     self.n_frame = self.stop_n_frame
 
+    # FIXME: top-level
     def on_remove(self):
 
         # pending; a better workflow for undo
         def destroy(i):
             self.save_records()
-            # root.grab_release()
             k = [k for k, v in self.object_name.items() if v['ind'] == i][0]
             result = askyesno('確認', '刪除以後就無法復原, 確定要刪除 %s 嗎？' %k, icon='warning')
             if result:
@@ -592,7 +575,6 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
                 button['state'] = 'disabled'
                 button.grid_forget()
                 self.center_root(r=-35)
-                # root.destroy()
                 top.destroy()
 
                 # delete all info
@@ -601,15 +583,13 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
 
                 del self.results_dict[k]
                 del self.object_name[k]
-                self.label_suggest.grid(row=0, column=1, sticky="nwes", padx=5, pady=5)
+                self.label_suggest.grid(row=0, column=1, sticky='news', padx=5, pady=5)
                 if k in self.dist_records.keys():
                     del self.dist_records[k]
                 self.all_buttons.pop(i+2)
                 self.undo_records = []
-            else:
-                pass
+
         def close():
-            # root.destroy()
             top.destroy()
 
         top = tk.Toplevel()
@@ -618,7 +598,11 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
         top.title('Remove object')
         self.center(top)
         for k in sorted([k for k, v in self.object_name.items() if v['on']]):
-            b = ttk.Button(top, text=self.object_name[k]['display_name'], command=lambda i = self.object_name[k]['ind']: destroy(i))
+            b = ttk.Button(
+                top,
+                text=self.object_name[k]['display_name'],
+                command=lambda i = self.object_name[k]['ind']: destroy(i)
+            )
             b.pack(expand=True, fill=tk.BOTH)
         self.root.wait_window(top)
 
@@ -765,6 +749,7 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
 
             self.results_dict, self.tmp_results_dict, self.dist_records, self.hit_condi, self.stop_n_frame, self.undone_pts, self.current_pts, self.current_pts_n, self.suggest_ind, self.object_name = self.undo_records[-2 if (len(self.undo_records) > 1 and not is_esc) else -1]
 
+            # undo all records
             if old_name != self.object_name:
                 keys = set(self.object_name.keys()).difference(set(old_name.keys()))
                 for k in keys:
@@ -778,9 +763,10 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
                     self.all_buttons[ind].grid_forget()
                     self.all_buttons.pop(ind)
                     self.center_root(r=-35)
-
             self.undo_records = self.undo_records[:-1]
             self.n_frame = self.stop_n_frame
+
+            # update suggestion
             if len(self.suggest_ind) > 0:
                 if self.suggest_ind[0][0] == 'fp':
                     ind = 0
@@ -797,32 +783,27 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
             tmp = []
             for i, b in enumerate(self.all_buttons):
                 if i in [0, 1]:
-                    pass
+                    continue
                 elif i - 2 in on_ind:
-                    b.grid(row=i + 2, column=0, sticky=tk.W+tk.E+tk.N+tk.S, padx=5, pady=5)
+                    b.grid(row=i + 2, column=0, sticky='news', padx=5, pady=5)
                     b.config(text=self.object_name[letter[i-2]]['display_name'])
                     if b['state'] == 'disabled':
                         b['state'] = 'normal'
                         self.center_root(r=35)
-                else:
-                    try:
-                        self.treeview_object.delete(letter[i-2])
-                    except:
-                        LOGGER.info(letter[i-2])
-
+                elif self.treeview_object.exists(letter[i-2]):
+                    self.treeview_object.delete(letter[i-2])
                     b.grid_forget()
                     tmp.append(i)
                     self.center_root(r=-35)
-                    LOGGER.info('Delete button %s' % (i-2))
+                    LOGGER.info('Delete button {}'.format(i-2))
 
-
-            LOGGER.info('undo method %s \n\n' % tmp)
-
+            LOGGER.info('Undo method {}'.format(tmp))
             self.all_buttons = [b for i, b in enumerate(self.all_buttons) if i not in tmp]
 
             for i, b in enumerate(self.all_buttons):
-                b.grid(row=i, column=0, sticky=tk.W+tk.E+tk.N+tk.S, padx=5, pady=5)
+                b.grid(row=i, column=0, sticky='news', padx=5, pady=5)
 
+    # undo method when exit manual mode
     def undo_manual(self):
         self.drag_flag = None
         for k in sorted(self.object_name.keys()):

@@ -121,8 +121,6 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
 
         # tkinter widgets
         self.root = None
-        self.n_frame_var = None
-        self.tol_var = None
         self.all_buttons = []
         self._init_width = None
         self._init_height = None
@@ -411,12 +409,6 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.update_frame()
         self.update_info()
         self.draw()
-
-        # label for frame information
-        self.n_frame_var = tk.IntVar()
-        self.n_frame_var.set(self.n_frame)
-        self.tol_var = tk.DoubleVar()
-        self.tol_var.set(self.tol)
 
         # convert to format that ImageTk require
         self.image = ImageTk.PhotoImage(Image.fromarray(self._frame))

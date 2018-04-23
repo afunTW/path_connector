@@ -526,16 +526,6 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
         self.var_max_path.set(v)
         self.maximum = v
 
-    def set_tol(self, s):
-        v = round(float(s), 1)
-        self.tol_var.set(v)
-        self.tol = v
-
-    def set_nframe(self, s):
-        v = int(float(s))
-        self.n_frame_var.set(v)
-        self.n_frame = v
-
     def on_return(self, event=None):
         self.n_frame = self.stop_n_frame
 

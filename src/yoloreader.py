@@ -190,7 +190,12 @@ class YOLOReader(object):
                     not_assigned_indices = []
 
                     for ind in not_assigned_boxes:
+                        # FIXME: README
                         if not any([v['dist'][ind] <= THRES_NEAR_DIST for k, v in tmp_dist_record.items() if k in assigned_keys]):
+                            # temp: 符合最小距離的數量
+                            # fp_n: 看到未來第 n 個 frame 的 index (為了檢查是否有符合最小距離條件的 frame)
+                            # forward_points: 未來 n 個 frame 的 model 預測 bounding box 的結果
+                            # p_tmp: bbox center
                             temp = 0
                             fp_n = min(n_frame + THRES_NOT_ASSIGN_FORWARD_N_MAX, len(self.__yolo_results__))
                             forward_points = [eval(self.__yolo_results__[i])[1] for i in range(n_frame, fp_n)]

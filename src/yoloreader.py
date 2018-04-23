@@ -432,7 +432,7 @@ class YOLOReader(object):
                 LOGGER.info('paths connecting stops at %s' % n_frame)
 
             # record animation
-            if n_frame % n_show == 0 and self.label_display is not None:
+            if n_frame % n_show == 0 and len(self.all_buttons) != 0:
 
                 cv2.putText(self._frame, 'Calculating...', (30, 30), cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 255, 255), 1)
                 for k in on_keys:

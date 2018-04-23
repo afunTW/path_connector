@@ -406,6 +406,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.last_n_frame = self.n_frame
 
         self._init_main_viewer()
+        self.update_frame()
         self.load_history()
         self.update_frame()
         self.update_info()

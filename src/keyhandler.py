@@ -204,7 +204,6 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
         # if right click while manual label mode
         if n == 3 and self.is_manual:
             self.undo_manual()
-        # if double left click while manual label mode
         elif self.is_manual and self.drag_flag == 'new':
             # pending; add a UI to confirm adding object
             p = (event.x, event.y)
@@ -595,12 +594,6 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
             )
             b.pack(expand=True, fill=tk.BOTH)
         self.root.wait_window(top)
-
-    def on_show_boxes(self):
-        self.is_show_boxes = not self.is_show_boxes
-
-    def break_loop(self, event=None):
-        self.safe = False
 
     def on_view(self):
         results_dict = self.results_dict

@@ -202,7 +202,9 @@ class KeyHandler(Interface, Common, PathConnectorViewer):
         n = event.num
 
         # if right click while manual label mode
-        if n == 3 and self.is_manual:
+        if n == 1 and not self.is_manual:
+            pass
+        elif n == 3 and self.is_manual:
             self.undo_manual()
         elif self.is_manual and self.drag_flag == 'new':
             # pending; add a UI to confirm adding object

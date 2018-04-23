@@ -167,6 +167,8 @@ class YOLOReader(object):
                 # start judgement
                 tmp_dist_record = copy.deepcopy(self.dist_records[n_frame])
                 # sorted dist index by dist
+                # sorted_indexes: 在 n_frame 時, 每個 label 到每個 bbox 距離的排序
+                # e.g. {'1': [0, 2, 1], '2': [2, 0, 1], '3': [1, 2, 0], '4': [2, 1, 0]}
                 sorted_indexes = {k: sorted(range(len(v['dist'])), key=lambda k: v['dist'][k]) for k, v in tmp_dist_record.items()}
                 hit_condi = [(k, sorted_indexes[k][0]) for k in on_keys if tmp_dist_record[k]['below_tol'][sorted_indexes[k][0]]]
 
@@ -174,7 +176,6 @@ class YOLOReader(object):
                 if n_frame == 1:
                     pass
                 elif len(set([v[1] for v in hit_condi])) == len(on_keys):
-
                     for k, ind in hit_condi:
                         if k not in label_ind:
                             self.results_dict[k]['path'].append(tmp_dist_record[k]['center'][ind])
@@ -185,9 +186,9 @@ class YOLOReader(object):
 
                     assigned_keys = [k for k, ind in hit_condi]
                     assigned_boxes = [ind for k, ind in hit_condi]
-                    not_assigned_boxes = set([i for i in range(len(boxes))]).difference(assigned_boxes)
-
+                    not_assigned_boxes = set(range(len(boxes))).difference(assigned_boxes)
                     not_assigned_indices = []
+
                     for ind in not_assigned_boxes:
                         if not any([v['dist'][ind] <= THRES_NEAR_DIST for k, v in tmp_dist_record.items() if k in assigned_keys]):
                             temp = 0

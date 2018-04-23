@@ -158,6 +158,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
     # read the video frame by given ind
     def update_frame(self, ind=None):
         ind = ind if ind is not None else self.n_frame - 1
+        LOGGER.info(ind)
         self.video.set(cv2.CAP_PROP_POS_FRAMES, ind)
         ok, self._frame = self.video.read()
         self._orig_frame = self._frame.copy()
@@ -388,7 +389,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.label_display.bind('<Button-1>', self.on_mouse)
         self.label_display.bind('<Button-3>', self.on_mouse)
         self.label_display.bind('<Motion>', self.on_mouse_mv)
-        self.scale_nframe_v.config(from_=1, to_=self.total_frame, command=self.set_nframe)
+        self.scale_nframe_v.config(from_=1, to_=self.total_frame)
         self.scrollbar_object.config(command=self.treeview_object.yview)
         self.treeview_object.config(yscrollcommand=self.scrollbar_object.set)
         self.treeview_object.bind('<Double-Button-1>', self.tvitem_click)

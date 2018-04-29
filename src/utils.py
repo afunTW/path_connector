@@ -220,7 +220,7 @@ class Utils(object):
                         nh = int(shape[0] * self._c_height)
                         nw = int(shape[1] * nh / shape[0])
                         self._c_width = nh / shape[0]
-                    df_w = self.display_frame.winfo_width()
+                    df_w = self.frame_display.winfo_width()
                     if df_w == 1284:
                         pass
                     elif nw > df_w:
@@ -237,7 +237,8 @@ class Utils(object):
 
                     newsize = (nw, nh)
                     self._frame = cv2.resize(self._frame, newsize)
-                except:
+                except Exception as e:
+                    print(e)
                     pass
 
             # convert frame into rgb

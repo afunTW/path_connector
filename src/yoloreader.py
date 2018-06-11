@@ -58,7 +58,7 @@ class YOLOReader(object):
         ind: run this function start from ind-th frames
         n_show: records every n_show for displaying tracked results
 
-        self.__yolo_results__ = [frame index, [[x1, y1, w1, h1, prob1], [x2, ...], ...]]
+        self.__yolo_results__ = [frame index, [[y1, x1, y2, x2, prob1], [y1, ...], ...]]
         """
         # n_key_used: 有出現過的 label 個數
         n_key_used = len(self.object_name.keys())

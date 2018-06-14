@@ -58,9 +58,10 @@ class YOLOReader(object):
         ind: run this function start from ind-th frames
         n_show: records every n_show for displaying tracked results
 
-        self.__yolo_results__ = [frame index, [[y1, x1, y2, x2, prob1], [y1, ...], ...]]
+        self.__yolo_results__ = [frame index, [[y1, x1, y2, x2, prob1, {class: prob}], [y1, ...], ...]]
         """
         # n_key_used: 有出現過的 label 個數
+        # object name = class label
         n_key_used = len(self.object_name.keys())
 
         self.is_calculate = True
@@ -69,19 +70,22 @@ class YOLOReader(object):
         n_frame = ind or self.n_frame
 
         while self.is_calculate:
+            
+            # 取得當前 frame 的紀錄 (frame index, bbox+label probability)
             if n_frame < self.__total_n_frame__:
                 nframe, boxes = eval(self.__yolo_results__[n_frame - 1])
-                classes = np.random.choice(np.arange(1, 6),size=len(boxes), 
-                    p=[0.25, 0.25, 0.25, 0.23, 0.02], replace=False if len(boxes) < 5 else True)
+                # classes = np.random.choice(np.arange(1, 6),size=len(boxes), 
+                #     p=[0.25, 0.25, 0.25, 0.23, 0.02], replace=False if len(boxes) < 5 else True)
                 # 假設有 5 種埋葬蟲的 index, 4 種 mark + 1 unknown
             else:
                 self.is_calculate = False
                 self.is_finish = True
                 break
             assert nframe == n_frame
+
+            # 過濾 detection model 判斷為蟲的機率 < 0.75 的 bbox
+            boxes = [b for b in boxes if b[4] > 0.75]
             boxes = np.array(boxes)
-            if len(boxes) > 0:
-                boxes = boxes[np.where(boxes[:, 4] > 0.75)]
 
             # append history manual label result
             label_ind = [k for k, v in self.label_dict.items() if n_frame in v['n_frame']]
@@ -91,7 +95,7 @@ class YOLOReader(object):
                     LOGGER.info(self.results_dict[k])
                     self.add_res(k, self.label_dict[k]['path'][i], self.results_dict[k]['wh'][-1], n_frame)
 
-            # initiate frame for recording animation
+            # 每 n_show 個 frame 更新顯示畫面
             if n_frame % n_show == 0:
                 self.update_frame(n_frame)
 
@@ -105,8 +109,12 @@ class YOLOReader(object):
                 # boxes: 現在這個 frame 被 model 判斷是蟲, 而且機率大於 75% 的 bounding box
                 for i, box in enumerate(boxes):
                     # classes
-                    chrac = str(classes[i])
-                    ymin, xmin, ymax, xmax, score = box
+                    # chrac = str(classes[i])
+                    ymin, xmin, ymax, xmax, score, label_prob = box
+                    chrac, chrac_prob = max(label_prob.items(), key=lambda x: x[-1])
+                    LOGGER.info('{} - bbox ({}, {}, {}, {}) label ({}, {})'.format(
+                        nframe, ymin, xmin, ymax, xmax, chrac, chrac_prob
+                    ))
                     x_c = int((xmin+xmax) / 2 + 0.5)
                     y_c = int((ymin+ymax) / 2 + 0.5)
                     p = (x_c, y_c)  # bbox center
@@ -126,7 +134,7 @@ class YOLOReader(object):
                             min_dist = 99999
                             for b in res:
                                 # dist: default l2-norm (sqrt(x**2, y**2))
-                                ymin, xmin, ymax, xmax, score = b
+                                ymin, xmin, ymax, xmax, score, label_prob = b
                                 x_c = int((xmin+xmax) / 2 + 0.5)
                                 y_c = int((ymin+ymax) / 2 + 0.5)
                                 p_forward = (x_c, y_c)
@@ -198,8 +206,9 @@ class YOLOReader(object):
 
                 for i, box in enumerate(boxes):
                     # classes
-                    ind = str(classes[i])
-                    ymin, xmin, ymax, xmax, score = box
+                    # ind = str(classes[i])
+                    ymin, xmin, ymax, xmax, score, label_class = box
+                    chrac, chrac_prob = max(label_prob.items(), key=lambda x: x[-1])
                     x_c = int((xmin+xmax) / 2 + 0.5)
                     y_c = int((ymin+ymax) / 2 + 0.5)
                     p = (x_c, y_c)  # bbox center
@@ -207,16 +216,17 @@ class YOLOReader(object):
                     h = int(ymax - ymin)
 
                     # if classes is not unknown, 把 bbox 分配給對應的蟲
-                    if ind != '5':
-                        self.add_res(ind, p, (w, h), n_frame)
+                    if chrac != '5':
+                        self.add_res(chrac, p, (w, h), n_frame)
 
                     # 如果撞到 unknown classes 就停下來
                     else:
+                        LOGGER.info('Ready to stop because of charc == "{}"'.format(chrac))
                         self.is_calculate = False
                         undone_pts.append((tmp_dist_record[on_keys[0]]['center'][i], n_frame))
 
-                assigned_keys = [k for k, ind in hit_condi]
-                assigned_boxes = [ind for k, ind in hit_condi]
+                assigned_keys = [k for k, chrac in hit_condi]
+                assigned_boxes = [chrac for k, chrac in hit_condi]
                 not_assigned_boxes = set(range(len(boxes))).difference(assigned_boxes)
                 not_assigned_indices = []
                 ######
@@ -291,7 +301,7 @@ class YOLOReader(object):
             self.cancel_id = self.label_display.after(0, self.calculate_path, n_frame)
         else:
             # if the labeling process is not finish
-            if not self.is_finish:
+            if not self.is_finish and undone_pts:
                 undone_pts = list(set(undone_pts))
                 self.hit_condi = hit_condi
                 self.suggest_options(undone_pts, nframe)

@@ -131,7 +131,7 @@ class Utils(object):
                 _, boxes = eval(self.__yolo_results__[self.n_frame - 1])
 
                 for b in boxes:
-                    ymin, xmin, ymax, xmax, score = b
+                    ymin, xmin, ymax, xmax, score, label_prob = b
                     x_c = int((xmin+xmax) / 2 + 0.5)
                     y_c = int((ymin+ymax) / 2 + 0.5)
                     p1, p2 = (int(xmin), int(ymin)), (int(xmax), int(ymax))

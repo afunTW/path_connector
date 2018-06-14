@@ -83,7 +83,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self._orig_frame = None
         self.n_frame = None
         self.last_n_frame = None
-        self.stop_n_frame = None
+        self.stop_n_frame = 0
         self.mv_x = 0
         self.mv_y = 0
         self.last_x = 0
@@ -158,7 +158,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
     # read the video frame by given ind
     def update_frame(self, ind=None):
         ind = ind if ind is not None else self.n_frame - 1
-        LOGGER.info(ind)
+        LOGGER.info('update frame {}'.format(ind))
         self.video.set(cv2.CAP_PROP_POS_FRAMES, ind)
         ok, self._frame = self.video.read()
         self._orig_frame = self._frame.copy()
@@ -343,6 +343,7 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
 
     # load .dat file if exists
     def load_history(self):
+        LOGGER.info('Load history')
         self.history_file = self.video_path.split('.avi')[0] + '.dat'
         if os.path.isfile(self.history_file):
             with open(self.history_file, 'rb') as f:
@@ -434,15 +435,15 @@ class PathConnector(YOLOReader, KeyHandler, Utils):
         self.var_max_path.set(self.maximum)
         self.scale_max_path.set(self.maximum)
 
-        # suggest default option
-        if self.suggest_ind[0][0] == 'fp':
-            ind = 0
-        elif self.suggest_ind[0][0] == 'new':
-            ind = 1
-        else:
-            ind = self.object_name[self.suggest_ind[0][0]]['ind'] + 2
-        self.all_buttons[ind].focus_force()
-        self.label_suggest.grid(row=ind, column=1, sticky="news", padx=5, pady=5)
+        # # suggest default option
+        # if self.suggest_ind[0][0] == 'fp':
+        #     ind = 0
+        # elif self.suggest_ind[0][0] == 'new':
+        #     ind = 1
+        # else:
+        #     ind = self.object_name[self.suggest_ind[0][0]]['ind'] + 2
+        # self.all_buttons[ind].focus_force()
+        # self.label_suggest.grid(row=ind, column=1, sticky="news", padx=5, pady=5)
 
         self.update_track(0)
         self.update_label()

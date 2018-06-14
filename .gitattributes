@@ -1,1 +1,3 @@
-* text=crlf
+* text=auto
+
+.py text eol=crlf
